@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi"
 	"github.com/nei7/gls/internal"
 	"github.com/nei7/gls/internal/db"
 	"github.com/nei7/gls/internal/dto"
