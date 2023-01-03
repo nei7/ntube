@@ -9,28 +9,28 @@ import (
 	"context"
 )
 
-const createUser = `-- name: CreateUser :one
+const CreateUser = `-- name: CreateUser :one
 INSERT INTO users (
     email
 ) VALUES (
     $1
-) RETURNING id, email
+) RETURNING id, email, password
 `
 
 func (q *Queries) CreateUser(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, email)
+	row := q.db.QueryRow(ctx, CreateUser, email)
 	var i User
-	err := row.Scan(&i.ID, &i.Email)
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
 	return i, err
 }
 
-const getUser = `-- name: GetUser :one
-SELECT id, email FROM users WHERE email = $1 LIMIT 1
+const GetUser = `-- name: GetUser :one
+SELECT id, email, password FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUser(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, email)
+	row := q.db.QueryRow(ctx, GetUser, email)
 	var i User
-	err := row.Scan(&i.ID, &i.Email)
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
 	return i, err
 }
