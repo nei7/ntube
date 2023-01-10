@@ -27,7 +27,7 @@ import (
 func main() {
 	var env, addr string
 
-	flag.StringVar(&env, "env", "", "Enviroment variables filename")
+	flag.StringVar(&env, "env", ".env", "Enviroment variables filename")
 	flag.StringVar(&addr, "addr", ":3000", "Server address")
 	flag.Parse()
 
@@ -47,9 +47,8 @@ func run(env, addr string) (error, <-chan error) {
 		return err, nil
 	}
 
-	viper.AddConfigPath(env)
+	viper.SetConfigFile(env)
 
-	viper.SetConfigName("app")
 	viper.SetConfigType("env")
 
 	viper.AutomaticEnv()
@@ -63,7 +62,7 @@ func run(env, addr string) (error, <-chan error) {
 		return err, nil
 	}
 
-	pool, err := db.NewDatabaseConnection(config)
+	pool, err := db.NewDBConn(config)
 	if err != nil {
 		return err, nil
 	}

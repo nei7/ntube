@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "/video";
+
+message UploadVideoRequest {
+    oneof data {
+        VideoInfo info = 1;
+        bytes chunk_data = 2;
+    };
+}
+
+message VideoInfo {
+    string title = 1;
+}
+
+message UploadVideoResponse {
+    string id = 1;
+    uint64 size = 2;
+}
+
+service VideoUploadService {
+    rpc UploadVideo(stream UploadVideoRequest) returns (UploadVideoResponse) {};
+}

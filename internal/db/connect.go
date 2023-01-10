@@ -17,7 +17,7 @@ type DBConfig struct {
 	SSLMode  string `mapstructure:"DB_SSL_MODE"`
 }
 
-func NewDatabaseConnection(config DBConfig) (*pgxpool.Pool, error) {
+func NewDBConn(config DBConfig) (*pgxpool.Pool, error) {
 	dsn := url.URL{
 		Scheme: "postgres",
 		User:   url.UserPassword(config.Username, config.Password),

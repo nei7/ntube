@@ -5,6 +5,8 @@
 package db
 
 import (
+	"database/sql"
+
 	"github.com/google/uuid"
 )
 
@@ -12,4 +14,11 @@ type User struct {
 	ID       uuid.UUID
 	Email    string
 	Password string
+}
+
+type Video struct {
+	ID         uuid.UUID
+	Path       string
+	UploadedAt sql.NullTime
+	OwnerID    uuid.UUID
 }
