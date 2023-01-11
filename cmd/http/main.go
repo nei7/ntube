@@ -31,7 +31,7 @@ func main() {
 	flag.StringVar(&addr, "addr", ":3000", "Server address")
 	flag.Parse()
 
-	err, errC := run(env, addr)
+	errC, err := run(env, addr)
 	if err != nil {
 		log.Fatalf("Couldn't run: %s", err)
 	}
@@ -41,10 +41,10 @@ func main() {
 	}
 }
 
-func run(env, addr string) (error, <-chan error) {
+func run(env, addr string) (<-chan error, error) {
 	logger, err := zap.NewProduction()
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	viper.SetConfigFile(env)
@@ -54,17 +54,17 @@ func run(env, addr string) (error, <-chan error) {
 	viper.AutomaticEnv()
 
 	if err = viper.ReadInConfig(); err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	var config db.DBConfig
 	if err = viper.Unmarshal(&config); err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	pool, err := db.NewDBConn(config)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	logging := middlewares.LoggerMiddleware(*logger)
@@ -76,7 +76,7 @@ func run(env, addr string) (error, <-chan error) {
 		middlewares: []func(next http.Handler) http.Handler{logging},
 	})
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	errChan := make(chan error, 1)
@@ -113,7 +113,7 @@ func run(env, addr string) (error, <-chan error) {
 
 	}()
 
-	return nil, errChan
+	return errChan, nil
 }
 
 type serverConfig struct {

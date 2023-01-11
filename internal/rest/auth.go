@@ -1,27 +1,21 @@
 package rest
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi"
 	"github.com/nei7/gls/internal"
-	"github.com/nei7/gls/internal/db"
 	"github.com/nei7/gls/internal/dto"
+	"github.com/nei7/gls/internal/service"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService interface {
-	Create(ctx context.Context, params dto.CreateUserParams) (db.User, error)
-	Find(ctx context.Context, email string) (db.User, error)
-}
-
 type UserHandler struct {
-	userService UserService
+	userService service.UserService
 }
 
-func NewUserHandler(userService UserService) *UserHandler {
+func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{
 		userService,
 	}
