@@ -1,0 +1,100 @@
+package main
+
+import (
+	"bufio"
+	"context"
+	"flag"
+	"io"
+	"log"
+	"os"
+
+	"github.com/nei7/gls/internal/service"
+	"github.com/nei7/gls/pkg/video"
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+)
+
+func main() {
+
+	var videoPath string
+
+	flag.StringVar(&videoPath, "v", "", "video path")
+
+	flag.Parse()
+
+	viper.SetConfigFile(".env")
+
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatal("failed to load .env file", err)
+	}
+
+	conn, err := grpc.Dial(":3001", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("error while connecting", err)
+	}
+	videoClient := video.NewVideoUploadServiceClient(conn)
+
+	f, err := os.Open(videoPath)
+	if err != nil {
+		log.Fatal("error while opening file", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
+
+	jwt, err := tokenManager.NewJWT("c739779e-c1e5-4bb2-9d95-976bb5f34263")
+	if err != nil {
+		log.Fatal("failed to generate jwt token")
+	}
+
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", jwt)
+
+	stream, err := videoClient.UploadVideo(ctx)
+	if err != nil {
+		log.Fatal("failed to establish connection with video server", err)
+	}
+
+	err = stream.Send(&video.UploadVideoRequest{
+		Data: &video.UploadVideoRequest_Info{
+			Info: &video.VideoInfo{
+				Title: "video",
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("can't send image to server")
+	}
+
+	reader := bufio.NewReader(f)
+	buf := make([]byte, 1024)
+
+	for {
+		n, err := reader.Read(buf)
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatal("can't send chunk data to server", err)
+		}
+
+		err = stream.Send(&video.UploadVideoRequest{
+			Data: &video.UploadVideoRequest_ChunkData{
+				ChunkData: buf[:n],
+			},
+		})
+		if err != nil {
+			log.Fatal("can't send chunk data to server", err, stream.RecvMsg(nil))
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatal("can't get response", err)
+	}
+
+	log.Printf("Image uploaded successfully - ID: %s, size: %d \n", res.GetId(), res.GetSize())
+}

@@ -57,11 +57,15 @@ func run(env, addr string) (<-chan error, error) {
 		return nil, err
 	}
 
-	repo := repo.NewVideRepo(pool)
-	videoService := service.NewVideoService(repo)
+	videoRepo := repo.NewVideRepo(pool)
+	userRepo := repo.NewUserRepo(pool)
+
+	videoService := service.NewVideoService(videoRepo)
+	userService := service.NewUserService(logger, userRepo)
+
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
 
-	videoServer := grpc_service.NewVideoServer(viper.GetString("VIDEO_STORAGE_PATH"), videoService, tokenManager, logger)
+	videoServer := grpc_service.NewVideoServer(viper.GetString("VIDEO_STORAGE_PATH"), videoService, userService, tokenManager, logger)
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {

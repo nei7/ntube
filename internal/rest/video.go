@@ -14,6 +14,8 @@ func NewVideoHandler() *VideoHandler {
 
 func (h *VideoHandler) Register(r *chi.Mux) {}
 
-func (h *VideoHandler) upload(w http.ResponseWriter, r *http.Request) {
+func (h *VideoHandler) serve(w http.ResponseWriter, r *http.Request) {
+	chi.URLParam()
 
+	http.ServeContent(w, r)
 }

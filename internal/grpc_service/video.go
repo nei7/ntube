@@ -28,13 +28,14 @@ const MAX_CHUNK_SIZE = 50 * 8 * 1024 * 1024
 type VideoServer struct {
 	video.UnimplementedVideoUploadServiceServer
 	storePath    string
-	svc          service.VideoService
+	videoService service.VideoService
+	userService  service.UserService
 	tokenManager service.TokenManager
 	logger       *zap.Logger
 }
 
-func NewVideoServer(storePath string, svc service.VideoService, tokenManager service.TokenManager, logger *zap.Logger) *VideoServer {
-	return &VideoServer{video.UnimplementedVideoUploadServiceServer{}, storePath, svc, tokenManager, logger}
+func NewVideoServer(storePath string, videoService service.VideoService, userService service.UserService, tokenManager service.TokenManager, logger *zap.Logger) *VideoServer {
+	return &VideoServer{video.UnimplementedVideoUploadServiceServer{}, storePath, videoService, userService, tokenManager, logger}
 }
 
 func (s *VideoServer) UploadVideo(stream video.VideoUploadService_UploadVideoServer) error {
@@ -98,7 +99,7 @@ func (s *VideoServer) UploadVideo(stream video.VideoUploadService_UploadVideoSer
 		return status.Error(codes.Unauthenticated, "invalid user id")
 	}
 
-	_, err = s.svc.Create(stream.Context(), db.CreateVideoParams{
+	_, err = s.videoService.Create(stream.Context(), db.CreateVideoParams{
 		Path:    id.String(),
 		OwnerID: ownerId,
 	})
@@ -117,9 +118,23 @@ func (s *VideoServer) UploadVideo(stream video.VideoUploadService_UploadVideoSer
 		return status.Error(codes.Internal, "cannot save image to the store")
 	}
 
-	err = ffmpeg.Extract_HLS(s.storePath, id.String())
+	err = ffmpeg.DoScreenshot(s.storePath, id.String())
+	if err != nil {
+		s.logger.Warn("failed to do a screenshot", zap.String("id", id.String()))
+	}
+
+	err = ffmpeg.ExtractHLS(s.storePath, id.String())
 	if err != nil {
 		return status.Error(codes.Internal, "failed to convert video")
+	}
+
+	err = stream.SendAndClose(&video.UploadVideoResponse{
+		Id:   id.String(),
+		Size: uint64(videoSize),
+	})
+
+	if err != nil {
+		return status.Errorf(codes.Unknown, "cannot send response: %v", err)
 	}
 
 	return nil
