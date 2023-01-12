@@ -12,22 +12,119 @@ import (
 )
 
 const CreateVideo = `-- name: CreateVideo :one
-INSERT INTO videos (path, owner_id) VALUES ($1, $2) RETURNING id, path, uploaded_at, owner_id
+INSERT INTO videos (path, owner_id, thumbnail) VALUES ($1, $2, $3) RETURNING id, path, uploaded_at, owner_id, thumbnail, title, description
 `
 
 type CreateVideoParams struct {
-	Path    string
-	OwnerID uuid.UUID
+	Path      string
+	OwnerID   uuid.UUID
+	Thumbnail string
 }
 
 func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error) {
-	row := q.db.QueryRow(ctx, CreateVideo, arg.Path, arg.OwnerID)
+	row := q.db.QueryRow(ctx, CreateVideo, arg.Path, arg.OwnerID, arg.Thumbnail)
 	var i Video
 	err := row.Scan(
 		&i.ID,
 		&i.Path,
 		&i.UploadedAt,
 		&i.OwnerID,
+		&i.Thumbnail,
+		&i.Title,
+		&i.Description,
+	)
+	return i, err
+}
+
+const DeleteVideo = `-- name: DeleteVideo :exec
+DELETE FROM videos WHERE id = $1
+`
+
+func (q *Queries) DeleteVideo(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, DeleteVideo, id)
+	return err
+}
+
+const GetUserVideos = `-- name: GetUserVideos :many
+SELECT id, path, uploaded_at, owner_id, thumbnail, title, description FROM videos WHERE owner_id = $1 ORDER BY uploaded_at LIMIT $2
+`
+
+type GetUserVideosParams struct {
+	OwnerID uuid.UUID
+	Limit   int32
+}
+
+func (q *Queries) GetUserVideos(ctx context.Context, arg GetUserVideosParams) ([]Video, error) {
+	rows, err := q.db.Query(ctx, GetUserVideos, arg.OwnerID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.Path,
+			&i.UploadedAt,
+			&i.OwnerID,
+			&i.Thumbnail,
+			&i.Title,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const GetVideo = `-- name: GetVideo :one
+SELECT id, path, uploaded_at, owner_id, thumbnail, title, description FROM videos WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetVideo(ctx context.Context, id uuid.UUID) (Video, error) {
+	row := q.db.QueryRow(ctx, GetVideo, id)
+	var i Video
+	err := row.Scan(
+		&i.ID,
+		&i.Path,
+		&i.UploadedAt,
+		&i.OwnerID,
+		&i.Thumbnail,
+		&i.Title,
+		&i.Description,
+	)
+	return i, err
+}
+
+const UpdateVideo = `-- name: UpdateVideo :one
+UPDATE videos SET 
+  title = $1, description = $2 
+  WHERE id = $3
+  RETURNING id, path, uploaded_at, owner_id, thumbnail, title, description
+`
+
+type UpdateVideoParams struct {
+	Title       string
+	Description string
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateVideo(ctx context.Context, arg UpdateVideoParams) (Video, error) {
+	row := q.db.QueryRow(ctx, UpdateVideo, arg.Title, arg.Description, arg.ID)
+	var i Video
+	err := row.Scan(
+		&i.ID,
+		&i.Path,
+		&i.UploadedAt,
+		&i.OwnerID,
+		&i.Thumbnail,
+		&i.Title,
+		&i.Description,
 	)
 	return i, err
 }

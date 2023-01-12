@@ -17,8 +17,11 @@ type User struct {
 }
 
 type Video struct {
-	ID         uuid.UUID
-	Path       string
-	UploadedAt sql.NullTime
-	OwnerID    uuid.UUID
+	ID          uuid.UUID
+	Path        string
+	UploadedAt  sql.NullTime
+	OwnerID     uuid.UUID
+	Thumbnail   string
+	Title       string
+	Description string
 }

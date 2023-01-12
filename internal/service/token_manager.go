@@ -2,13 +2,12 @@ package service
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
 type TokenManager interface {
-	NewJWT(userID string) (string, error)
+	NewJWT(userID string, duration int64) (string, error)
 	Parse(accessToken string) (string, error)
 	NewRefreshToken() (string, error)
 }
@@ -23,9 +22,9 @@ func NewTokenManager(signingKey string) *tokenManager {
 	}
 }
 
-func (t *tokenManager) NewJWT(userID string) (string, error) {
+func (t *tokenManager) NewJWT(userID string, duration int64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(time.Minute * 60).Unix(),
+		ExpiresAt: duration,
 		Subject:   userID,
 	})
 

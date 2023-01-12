@@ -41,6 +41,11 @@ func main() {
 	}
 }
 
+type envConfig struct {
+	db.DBConfig
+	JWT_KEY string `mapstructure:"JWT_KEY"`
+}
+
 func run(env, addr string) (<-chan error, error) {
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -57,12 +62,12 @@ func run(env, addr string) (<-chan error, error) {
 		return nil, err
 	}
 
-	var config db.DBConfig
+	var config envConfig
 	if err = viper.Unmarshal(&config); err != nil {
 		return nil, err
 	}
 
-	pool, err := db.NewDBConn(config)
+	pool, err := db.NewDBConn(config.DBConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +77,7 @@ func run(env, addr string) (<-chan error, error) {
 	srv, err := newServer(serverConfig{
 		addr:        addr,
 		DB:          pool,
+		jwtKey:      config.JWT_KEY,
 		Logger:      logger,
 		middlewares: []func(next http.Handler) http.Handler{logging},
 	})
@@ -119,6 +125,7 @@ func run(env, addr string) (<-chan error, error) {
 type serverConfig struct {
 	addr        string
 	DB          *pgxpool.Pool
+	jwtKey      string
 	Logger      *zap.Logger
 	middlewares []func(next http.Handler) http.Handler
 }
@@ -132,8 +139,9 @@ func newServer(conf serverConfig) (*http.Server, error) {
 
 	userRepo := repo.NewUserRepo(conf.DB)
 	userService := service.NewUserService(conf.Logger, userRepo)
+	tokenManager := service.NewTokenManager(conf.jwtKey)
 
-	rest.NewUserHandler(userService).Register(router)
+	rest.NewUserHandler(userService, tokenManager).Register(router)
 
 	limiter := tollbooth.NewLimiter(3, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
 	rateLimitHandler := tollbooth.LimitHandler(limiter, router)

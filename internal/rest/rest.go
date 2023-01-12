@@ -15,14 +15,14 @@ type ErrorResponse struct {
 	Validations validation.Errors `json:"validations,omitempty"`
 }
 
-func renderErrorResponse(w http.ResponseWriter, r *http.Request, msg string, err error) {
+func renderErrorResponse(w http.ResponseWriter, r *http.Request, err error, status int) {
 	_, span := otel.Tracer(otelName).Start(r.Context(), "renerErrorResponse")
 	defer span.End()
 	span.RecordError(err)
 
-	render.Status(r, http.StatusInternalServerError)
+	render.Status(r, status)
 	render.JSON(w, r, &ErrorResponse{
-		Error: msg,
+		Error: err.Error(),
 	})
 }
 

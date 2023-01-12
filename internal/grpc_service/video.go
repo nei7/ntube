@@ -29,13 +29,12 @@ type VideoServer struct {
 	video.UnimplementedVideoUploadServiceServer
 	storePath    string
 	videoService service.VideoService
-	userService  service.UserService
 	tokenManager service.TokenManager
 	logger       *zap.Logger
 }
 
-func NewVideoServer(storePath string, videoService service.VideoService, userService service.UserService, tokenManager service.TokenManager, logger *zap.Logger) *VideoServer {
-	return &VideoServer{video.UnimplementedVideoUploadServiceServer{}, storePath, videoService, userService, tokenManager, logger}
+func NewVideoServer(storePath string, videoService service.VideoService, tokenManager service.TokenManager, logger *zap.Logger) *VideoServer {
+	return &VideoServer{video.UnimplementedVideoUploadServiceServer{}, storePath, videoService, tokenManager, logger}
 }
 
 func (s *VideoServer) UploadVideo(stream video.VideoUploadService_UploadVideoServer) error {
@@ -100,8 +99,9 @@ func (s *VideoServer) UploadVideo(stream video.VideoUploadService_UploadVideoSer
 	}
 
 	_, err = s.videoService.Create(stream.Context(), db.CreateVideoParams{
-		Path:    id.String(),
-		OwnerID: ownerId,
+		Path:      id.String(),
+		OwnerID:   ownerId,
+		Thumbnail: id.String(),
 	})
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())

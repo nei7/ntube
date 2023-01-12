@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/nei7/gls/internal/service"
 	"github.com/nei7/gls/pkg/video"
@@ -45,7 +46,7 @@ func main() {
 
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
 
-	jwt, err := tokenManager.NewJWT("c739779e-c1e5-4bb2-9d95-976bb5f34263")
+	jwt, err := tokenManager.NewJWT("c739779e-c1e5-4bb2-9d95-976bb5f34263", time.Now().Add(time.Hour*2).Unix())
 	if err != nil {
 		log.Fatal("failed to generate jwt token")
 	}

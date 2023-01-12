@@ -3,7 +3,6 @@ package ffmpeg
 import (
 	"fmt"
 	"math"
-	"os"
 	"os/exec"
 	"path"
 	"strconv"
@@ -57,10 +56,6 @@ func DoScreenshot(file_path, filename string) error {
 		// output
 		path.Join(file_path, "thumbnail", filename+".jpg"),
 	)
-
-	fmt.Println(cmd.String())
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
 
 	err = cmd.Start()
 	if err != nil {

@@ -1,21 +1,35 @@
 package rest
 
 import (
+	"errors"
 	"net/http"
+	"os"
+	"path"
+	"time"
 
 	"github.com/go-chi/chi"
 )
 
-type VideoHandler struct{}
-
-func NewVideoHandler() *VideoHandler {
-	return &VideoHandler{}
+type VideoHandler struct {
+	videoStoragePath string
 }
 
-func (h *VideoHandler) Register(r *chi.Mux) {}
+func NewVideoHandler(videoStoragePath string) *VideoHandler {
+	return &VideoHandler{videoStoragePath}
+}
+
+func (h *VideoHandler) Register(r *chi.Mux) {
+	r.Get("/videos/{video}", h.serve)
+}
 
 func (h *VideoHandler) serve(w http.ResponseWriter, r *http.Request) {
-	chi.URLParam()
+	videoName := chi.URLParam(r, "video")
 
-	http.ServeContent(w, r)
+	file, err := os.Open(path.Join(h.videoStoragePath, "mp4", videoName+".mp4"))
+	if err != nil {
+		renderErrorResponse(w, r, errors.New("not found"), http.StatusNotFound)
+		return
+	}
+
+	http.ServeContent(w, r, videoName, time.Unix(0, 0), file)
 }
