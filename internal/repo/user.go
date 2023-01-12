@@ -25,7 +25,10 @@ func NewUserRepo(d db.DBTX) *UserRepository {
 func (r *UserRepository) Create(ctx context.Context, params dto.CreateUserParams) (db.User, error) {
 	defer otelSpan(ctx, "User.Create").End()
 
-	user, err := r.q.CreateUser(ctx, params.Email)
+	user, err := r.q.CreateUser(ctx, db.CreateUserParams{
+		Password: params.Password,
+		Email:    params.Email,
+	})
 
 	return user, err
 }

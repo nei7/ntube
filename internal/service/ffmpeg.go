@@ -1,4 +1,4 @@
-package ffmpeg
+package service
 
 import (
 	"fmt"
@@ -9,10 +9,24 @@ import (
 	"strings"
 )
 
-func ExtractHLS(file_path, filename string) error {
+type FfpmegService interface {
+	ExtractHLS(filename string) error
+	DoScreenshot(filename string) error
+	GetVideoDuration(path string) (float64, error)
+}
+
+type ffmpegService struct {
+	basePath string
+}
+
+func NewFfpmegService(basePath string) *ffmpegService {
+	return &ffmpegService{basePath}
+}
+
+func (s *ffmpegService) ExtractHLS(filename string) error {
 	cmd := exec.Command(
 		"/usr/bin/ffmpeg",
-		"-i", path.Join(file_path, "tmp", filename+".tmp"),
+		"-i", path.Join(s.basePath, "tmp", filename+".tmp"),
 		// video size
 		"-vf", "scale=-1:720",
 		// video codec
@@ -23,8 +37,7 @@ func ExtractHLS(file_path, filename string) error {
 		"-c:a", "libmp3lame",
 		// format
 		"-f", "mp4",
-
-		path.Join(file_path, "mp4", filename+".mp4"),
+		path.Join(s.basePath, "mp4", filename+".mp4"),
 	)
 
 	err := cmd.Start()
@@ -35,10 +48,10 @@ func ExtractHLS(file_path, filename string) error {
 	return nil
 }
 
-func DoScreenshot(file_path, filename string) error {
-	tmpPath := path.Join(file_path, "tmp", filename+".tmp")
+func (s *ffmpegService) DoScreenshot(filename string) error {
+	tmpPath := path.Join(s.basePath, "tmp", filename+".tmp")
 
-	duration, err := getVideoDuration(tmpPath)
+	duration, err := s.GetVideoDuration(tmpPath)
 	if err != nil {
 		return err
 	}
@@ -54,7 +67,7 @@ func DoScreenshot(file_path, filename string) error {
 		// control output quality
 		"-q:v", "2",
 		// output
-		path.Join(file_path, "thumbnail", filename+".jpg"),
+		path.Join(s.basePath, "thumbnail", filename+".jpg"),
 	)
 
 	err = cmd.Start()
@@ -65,7 +78,7 @@ func DoScreenshot(file_path, filename string) error {
 	return nil
 }
 
-func getVideoDuration(path string) (float64, error) {
+func (s *ffmpegService) GetVideoDuration(path string) (float64, error) {
 	cmd := exec.Command(
 		"ffprobe",
 		"-v", "error",

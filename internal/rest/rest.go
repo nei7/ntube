@@ -16,7 +16,7 @@ type ErrorResponse struct {
 }
 
 func renderErrorResponse(w http.ResponseWriter, r *http.Request, err error, status int) {
-	_, span := otel.Tracer(otelName).Start(r.Context(), "renerErrorResponse")
+	_, span := otel.Tracer(otelName).Start(r.Context(), "renderErrorResponse")
 	defer span.End()
 	span.RecordError(err)
 

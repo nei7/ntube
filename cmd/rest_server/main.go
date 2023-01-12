@@ -17,9 +17,11 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nei7/gls/internal/db"
 	"github.com/nei7/gls/internal/middlewares"
+	"github.com/nei7/gls/internal/opentelemetry"
 	"github.com/nei7/gls/internal/repo"
 	"github.com/nei7/gls/internal/rest"
 	"github.com/nei7/gls/internal/service"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -41,11 +43,6 @@ func main() {
 	}
 }
 
-type envConfig struct {
-	db.DBConfig
-	JWT_KEY string `mapstructure:"JWT_KEY"`
-}
-
 func run(env, addr string) (<-chan error, error) {
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -62,12 +59,17 @@ func run(env, addr string) (<-chan error, error) {
 		return nil, err
 	}
 
-	var config envConfig
+	var config db.DBConfig
 	if err = viper.Unmarshal(&config); err != nil {
 		return nil, err
 	}
 
-	pool, err := db.NewDBConn(config.DBConfig)
+	pool, err := db.NewDBConn(config)
+	if err != nil {
+		return nil, err
+	}
+
+	shutdown, err := opentelemetry.InitProviderWithJaegerExporter("rest_server")
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +79,7 @@ func run(env, addr string) (<-chan error, error) {
 	srv, err := newServer(serverConfig{
 		addr:        addr,
 		DB:          pool,
-		jwtKey:      config.JWT_KEY,
+		jwtKey:      viper.GetString("JWT_KEY"),
 		Logger:      logger,
 		middlewares: []func(next http.Handler) http.Handler{logging},
 	})
@@ -95,6 +97,7 @@ func run(env, addr string) (<-chan error, error) {
 		ctxTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 		defer func() {
+			defer shutdown(ctx)
 			_ = logger.Sync()
 			pool.Close()
 			stop()
@@ -126,6 +129,7 @@ type serverConfig struct {
 	addr        string
 	DB          *pgxpool.Pool
 	jwtKey      string
+	Metrics     http.Handler
 	Logger      *zap.Logger
 	middlewares []func(next http.Handler) http.Handler
 }
@@ -142,6 +146,7 @@ func newServer(conf serverConfig) (*http.Server, error) {
 	tokenManager := service.NewTokenManager(conf.jwtKey)
 
 	rest.NewUserHandler(userService, tokenManager).Register(router)
+	router.Handle("/metrics", promhttp.Handler())
 
 	limiter := tollbooth.NewLimiter(3, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
 	rateLimitHandler := tollbooth.LimitHandler(limiter, router)

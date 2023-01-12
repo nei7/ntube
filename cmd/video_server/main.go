@@ -18,10 +18,12 @@ import (
 	"github.com/nei7/gls/internal/db"
 	"github.com/nei7/gls/internal/grpc_service"
 	"github.com/nei7/gls/internal/middlewares"
+	"github.com/nei7/gls/internal/opentelemetry"
 	"github.com/nei7/gls/internal/repo"
 	"github.com/nei7/gls/internal/rest"
 	"github.com/nei7/gls/internal/service"
 	"github.com/nei7/gls/pkg/video"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -69,10 +71,15 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 	videoRepo := repo.NewVideRepo(pool)
 
 	videoService := service.NewVideoService(videoRepo)
-
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
+	ffmpegService := service.NewFfpmegService(viper.GetString("VIDEO_STORAGE_PATH"))
 
-	videoServer := grpc_service.NewVideoServer(viper.GetString("VIDEO_STORAGE_PATH"), videoService, tokenManager, logger)
+	videoServer := grpc_service.NewVideoServer(viper.GetString("VIDEO_STORAGE_PATH"), ffmpegService, videoService, tokenManager, logger)
+
+	shutdown, err := opentelemetry.InitProviderWithJaegerExporter("video_server")
+	if err != nil {
+		return nil, err
+	}
 
 	lis, err := net.Listen("tcp", grpc_addr)
 	if err != nil {
@@ -103,6 +110,7 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 			_ = logger.Sync()
 			pool.Close()
 			defer cancel()
+			defer shutdown(ctx)
 			stop()
 			close(errChan)
 		}()
@@ -155,6 +163,7 @@ func newHttpServer(conf serverConfig) (*http.Server, error) {
 	}
 
 	rest.NewVideoHandler(viper.GetString("VIDEO_STORAGE_PATH")).Register(router)
+	router.Handle("/metrics", promhttp.Handler())
 
 	limiter := tollbooth.NewLimiter(3, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
 	rateLimitHandler := tollbooth.LimitHandler(limiter, router)

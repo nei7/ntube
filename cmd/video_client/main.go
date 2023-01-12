@@ -46,7 +46,7 @@ func main() {
 
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
 
-	jwt, err := tokenManager.NewJWT("c739779e-c1e5-4bb2-9d95-976bb5f34263", time.Now().Add(time.Hour*2).Unix())
+	jwt, err := tokenManager.NewJWT("7b129eba-8b82-4ff0-9751-a78fb1868993", time.Now().Add(time.Hour*2).Unix())
 	if err != nil {
 		log.Fatal("failed to generate jwt token")
 	}

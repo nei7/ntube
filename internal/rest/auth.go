@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/lib/pq"
 	"github.com/nei7/gls/internal/dto"
 	"github.com/nei7/gls/internal/service"
 	"golang.org/x/crypto/bcrypt"
@@ -28,6 +28,7 @@ func NewUserHandler(userService service.UserService, tokenManager service.TokenM
 func (h *UserHandler) Register(r *chi.Mux) {
 	r.Post("/signup", h.signUp)
 	r.Post("/login", h.logIn)
+	r.Post("/renew", h.renewToken)
 }
 
 func (h *UserHandler) signUp(w http.ResponseWriter, r *http.Request) {
@@ -47,12 +48,11 @@ func (h *UserHandler) signUp(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Create(r.Context(), req)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
-				renderErrorResponse(w, r, errors.New("User already exists"), http.StatusConflict)
-				return
-			}
+
+		if strings.HasPrefix(err.Error(), "ERROR: duplicate key value violates unique constraint") {
+			renderErrorResponse(w, r, errors.New("user already exists"), http.StatusConflict)
+			return
+
 		}
 		renderErrorResponse(w, r, errors.New("Failed to create user"), http.StatusInternalServerError)
 		return

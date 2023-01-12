@@ -12,17 +12,25 @@ import (
 )
 
 const CreateVideo = `-- name: CreateVideo :one
-INSERT INTO videos (path, owner_id, thumbnail) VALUES ($1, $2, $3) RETURNING id, path, uploaded_at, owner_id, thumbnail, title, description
+INSERT INTO videos (path, owner_id, thumbnail, title, description) VALUES ($1, $2, $3, $4, $5) RETURNING id, path, uploaded_at, owner_id, thumbnail, title, description
 `
 
 type CreateVideoParams struct {
-	Path      string
-	OwnerID   uuid.UUID
-	Thumbnail string
+	Path        string
+	OwnerID     uuid.UUID
+	Thumbnail   string
+	Title       string
+	Description string
 }
 
 func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error) {
-	row := q.db.QueryRow(ctx, CreateVideo, arg.Path, arg.OwnerID, arg.Thumbnail)
+	row := q.db.QueryRow(ctx, CreateVideo,
+		arg.Path,
+		arg.OwnerID,
+		arg.Thumbnail,
+		arg.Title,
+		arg.Description,
+	)
 	var i Video
 	err := row.Scan(
 		&i.ID,

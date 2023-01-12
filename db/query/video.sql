@@ -1,5 +1,5 @@
 -- name: CreateVideo :one
-INSERT INTO videos (path, owner_id, thumbnail) VALUES ($1, $2, $3) RETURNING *;
+INSERT INTO videos (path, owner_id, thumbnail, title, description) VALUES ($1, $2, $3, $4, $5) RETURNING *;
 
 -- name: GetVideo :one
 SELECT * FROM videos WHERE id = $1 LIMIT 1;
