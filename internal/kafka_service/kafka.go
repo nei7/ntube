@@ -2,11 +2,19 @@ package kafka_service
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/spf13/viper"
 )
 
 type KafkaConfig struct {
 	Host  string `mapstructure:"KAFKA_HOST"`
 	Topic string `mapstructure:"KAFKA_TOPIC"`
+}
+
+func NewKafkaConfig() KafkaConfig {
+	return KafkaConfig{
+		Host:  viper.GetString("KAFKA_HOST"),
+		Topic: viper.GetString("KAFKA_TOPIC"),
+	}
 }
 
 func NewKafkaProducer(conf KafkaConfig) (*kafka.Producer, error) {

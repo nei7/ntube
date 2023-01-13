@@ -52,5 +52,12 @@ services:
       - "14278:14278"
     depends_on:
       - jaeger
+  elasticsearch:
+    image: elasticsearch:7.17.8
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
 networks:
   backend:

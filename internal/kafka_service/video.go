@@ -41,7 +41,7 @@ func (v *Video) Created(ctx context.Context, video datastruct.Video) error {
 	return v.publish(ctx, "Video.Created", VideoEventCreated, video)
 }
 
-func (v *Video) Delete(ctx context.Context, id string) error {
+func (v *Video) Deleted(ctx context.Context, id string) error {
 	return v.publish(ctx, "Video.Deleted", VideoEventDeleted, datastruct.Video{ID: id})
 }
 

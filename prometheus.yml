@@ -7,4 +7,5 @@ scrape_configs:
 - job_name: aggregated-trace-metrics
   scrape_interval: 5s
   static_configs:
+  # need to change
   - targets: ['192.168.5.10:3001','192.168.5.10:3000']

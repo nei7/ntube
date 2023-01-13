@@ -12,11 +12,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/go-chi/chi"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nei7/ntube/internal/db"
 	"github.com/nei7/ntube/internal/grpc_service"
+	"github.com/nei7/ntube/internal/kafka_service"
 	"github.com/nei7/ntube/internal/middlewares"
 	"github.com/nei7/ntube/internal/opentelemetry"
 	"github.com/nei7/ntube/internal/repo"
@@ -68,13 +71,11 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 		return nil, err
 	}
 
-	videoRepo := repo.NewVideRepo(pool)
-
-	videoService := service.NewVideoService(videoRepo)
-	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
-	ffmpegService := service.NewFfpmegService(viper.GetString("VIDEO_STORAGE_PATH"))
-
-	videoServer := grpc_service.NewVideoServer(viper.GetString("VIDEO_STORAGE_PATH"), ffmpegService, videoService, tokenManager, logger)
+	kafkaConfig := kafka_service.NewKafkaConfig()
+	kafka, err := kafka_service.NewKafkaProducer(kafkaConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	shutdown, err := opentelemetry.InitProviderWithJaegerExporter("video_server")
 	if err != nil {
@@ -88,7 +89,7 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 
 	logging := middlewares.LoggerMiddleware(*logger)
 
-	srv, err := newHttpServer(serverConfig{
+	srv, err := newHttpServer(httpServerConfig{
 		addr:        http_addr,
 		Logger:      logger,
 		middlewares: []func(next http.Handler) http.Handler{logging},
@@ -96,6 +97,12 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	grpcSrv := newGRPCServer(grpcServerConfig{
+		Logger: logger,
+		kafka:  kafka,
+		pool:   pool,
+	})
 
 	errChan := make(chan error, 1)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
@@ -130,7 +137,7 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 	go func() {
 		logger.Info("Listening and serving", zap.String("grpc_address", grpc_addr), zap.String("http_address", http_addr))
 
-		if err := newGRPCServer(*videoServer, lis); err != nil {
+		if err := grpcSrv.Serve(lis); err != nil {
 			errChan <- err
 		}
 
@@ -142,20 +149,35 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 	return nil, nil
 }
 
-func newGRPCServer(videoServer grpc_service.VideoServer, lis net.Listener) error {
-	grpcServer := grpc.NewServer()
-	video.RegisterVideoUploadServiceServer(grpcServer, &videoServer)
-
-	return grpcServer.Serve(lis)
+type grpcServerConfig struct {
+	Logger *zap.Logger
+	kafka  *kafka.Producer
+	pool   *pgxpool.Pool
 }
 
-type serverConfig struct {
+func newGRPCServer(conf grpcServerConfig) *grpc.Server {
+	videoRepo := repo.NewVideRepo(conf.pool)
+
+	search := kafka_service.NewVideo(conf.kafka, viper.GetString("KAFKA_TOPIC"))
+	videoService := service.NewVideoService(videoRepo, search)
+	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
+	ffmpegService := service.NewFfpmegService(viper.GetString("VIDEO_STORAGE_PATH"))
+
+	videoServer := grpc_service.NewVideoServer(viper.GetString("VIDEO_STORAGE_PATH"), ffmpegService, videoService, tokenManager, conf.Logger)
+
+	grpcServer := grpc.NewServer()
+	video.RegisterVideoUploadServiceServer(grpcServer, videoServer)
+
+	return grpcServer
+}
+
+type httpServerConfig struct {
 	addr        string
 	Logger      *zap.Logger
 	middlewares []func(next http.Handler) http.Handler
 }
 
-func newHttpServer(conf serverConfig) (*http.Server, error) {
+func newHttpServer(conf httpServerConfig) (*http.Server, error) {
 	router := chi.NewRouter()
 
 	for _, mw := range conf.middlewares {
