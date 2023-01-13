@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const otelName = "github.com/nei7/gls/internal/repo"
+const otelName = "github.com/nei7/ntube/internal/repo"
 
 func otelSpan(ctx context.Context, name string) trace.Span {
 	_, span := otel.Tracer(otelName).Start(ctx, name)

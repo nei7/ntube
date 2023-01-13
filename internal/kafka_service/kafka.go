@@ -1,4 +1,4 @@
-package kafka
+package kafka_service
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -9,7 +9,7 @@ type KafkaConfig struct {
 	Topic string `mapstructure:"KAFKA_TOPIC"`
 }
 
-func NewProducer(conf KafkaConfig) (*kafka.Producer, error) {
+func NewKafkaProducer(conf KafkaConfig) (*kafka.Producer, error) {
 	config := kafka.ConfigMap{
 		"bootstrap.servers": conf.Host,
 	}
@@ -22,7 +22,7 @@ func NewProducer(conf KafkaConfig) (*kafka.Producer, error) {
 	return client, nil
 }
 
-func NewConsumer(conf KafkaConfig, groupID string) (*kafka.Consumer, error) {
+func NewKafkaConsumer(conf KafkaConfig, groupID string) (*kafka.Consumer, error) {
 	config := kafka.ConfigMap{
 		"bootstrap.servers":  conf.Host,
 		"group.id":           groupID,

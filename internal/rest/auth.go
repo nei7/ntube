@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/nei7/gls/internal/dto"
-	"github.com/nei7/gls/internal/service"
+	"github.com/nei7/ntube/internal/dto"
+	"github.com/nei7/ntube/internal/service"
 	"golang.org/x/crypto/bcrypt"
 )
 

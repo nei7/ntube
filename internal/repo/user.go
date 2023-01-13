@@ -3,8 +3,8 @@ package repo
 import (
 	"context"
 
-	"github.com/nei7/gls/internal/db"
-	"github.com/nei7/gls/internal/dto"
+	"github.com/nei7/ntube/internal/db"
+	"github.com/nei7/ntube/internal/dto"
 )
 
 type UserQuery interface {

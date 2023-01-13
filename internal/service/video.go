@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/nei7/gls/internal/db"
-	"github.com/nei7/gls/internal/repo"
+	"github.com/nei7/ntube/internal/db"
+	"github.com/nei7/ntube/internal/repo"
 )
 
 type VideoService interface {

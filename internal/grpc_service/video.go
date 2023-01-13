@@ -9,9 +9,9 @@ import (
 	"path"
 
 	"github.com/google/uuid"
-	"github.com/nei7/gls/internal/db"
-	"github.com/nei7/gls/internal/service"
-	"github.com/nei7/gls/pkg/video"
+	"github.com/nei7/ntube/internal/db"
+	"github.com/nei7/ntube/internal/service"
+	"github.com/nei7/ntube/pkg/video"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"

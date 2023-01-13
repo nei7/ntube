@@ -3,7 +3,7 @@ package interceptor
 import (
 	"context"
 
-	"github.com/nei7/gls/internal/service"
+	"github.com/nei7/ntube/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 

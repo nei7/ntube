@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/nei7/gls/internal/service"
-	"github.com/nei7/gls/pkg/video"
+	"github.com/nei7/ntube/internal/service"
+	"github.com/nei7/ntube/pkg/video"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

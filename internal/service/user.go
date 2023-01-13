@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 
-	"github.com/nei7/gls/internal/db"
-	"github.com/nei7/gls/internal/dto"
-	"github.com/nei7/gls/internal/repo"
+	"github.com/nei7/ntube/internal/db"
+	"github.com/nei7/ntube/internal/dto"
+	"github.com/nei7/ntube/internal/repo"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
-const otelName = "github.com/nei7/gls/internal/service"
+const otelName = "github.com/nei7/ntube/internal/service"
 
 type UserService interface {
 	Create(ctx context.Context, params dto.CreateUserParams) (db.User, error)

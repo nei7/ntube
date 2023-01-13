@@ -8,8 +8,8 @@ import (
 
 	esv7 "github.com/elastic/go-elasticsearch/v7"
 	esv7api "github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/nei7/gls/internal"
-	"github.com/nei7/gls/internal/db"
+	"github.com/nei7/ntube/internal"
+	"github.com/nei7/ntube/internal/datastruct"
 )
 
 type Video struct {
@@ -34,17 +34,17 @@ func NewElasticVideo(client *esv7.Client) *Video {
 	}
 }
 
-func (v *Video) Index(ctx context.Context, video db.Video) error {
+func (v *Video) Index(ctx context.Context, video datastruct.Video) error {
 	defer newOtelSpan(ctx, "Video.Index").End()
 
 	b := indexedVideo{
-		ID:          video.ID.String(),
+		ID:          video.ID,
 		Description: video.Description,
 		Path:        video.Path,
 		Thumbnail:   video.Thumbnail,
 		Title:       video.Title,
-		UploadedAt:  video.UploadedAt.Time.Unix(),
-		OwnerID:     video.OwnerID.String(),
+		UploadedAt:  video.UploadedAt,
+		OwnerID:     video.OwnerID,
 	}
 
 	var buf bytes.Buffer
