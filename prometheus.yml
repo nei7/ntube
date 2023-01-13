@@ -8,4 +8,4 @@ scrape_configs:
   scrape_interval: 5s
   static_configs:
   # need to change
-  - targets: ['192.168.5.10:3001','192.168.5.10:3000']
+  - targets: ['host.docker.internal:3000','host.docker.internal:3001']

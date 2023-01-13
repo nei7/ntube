@@ -1,10 +1,11 @@
-package elasticsearchindexer
+package main
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,6 +27,14 @@ func main() {
 	flag.StringVar(&env, "env", ".env", "Enviroment variables filename")
 	flag.Parse()
 
+	errC, err := run(env)
+	if err != nil {
+		log.Fatalf("Couldn't run: %s", err)
+	}
+
+	if err := <-errC; err != nil {
+		log.Fatalf("Error while running: %s", err)
+	}
 }
 
 func run(env string) (<-chan error, error) {

@@ -59,5 +59,80 @@ services:
       - "9300:9300"
     environment:
       - discovery.type=single-node
+  zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka:2.13-2.8.1
+    ports:
+      - "9092:9092"
+    links:
+      - zookeeper
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_CREATE_TOPICS: 'videos:1:1'
+  kibana:
+    image: 'docker.elastic.co/kibana/kibana:7.10.2'
+    ports:
+      - "5601:5601"
+    hostname: kibana
+    depends_on:
+      - elasticsearch
+  rest_server:
+
+    build:
+      context: .
+      dockerfile: ./docker/rest_server/Dockerfile
+    ports:
+      - "3000:3000"
+    command: rest_server -env /api/.env
+    environment:
+      - name=value
+    depends_on:
+     - postgres
+     - jaeger
+     - prometheus
+     - otel_collector
+  elasticsearch_indexer:
+    build:
+      context: .
+      dockerfile: ./docker/elasticsearch_indexer/Dockerfile
+    command: elasticsearch_indexer -env /api/.env
+    environment:
+      KAFKA_TOPIC: videos
+      KAFKA_HOST: localhost
+    depends_on:
+      - kafka
+      - zookeeper
+      - prometheus
+      - otel_collector
+      - jaeger
+      - elasticsearch
+  video_server:
+    build:
+      context: .
+      dockerfile: ./docker/video_server/Dockerfile
+      args:
+       VIDEO_STORAGE_PATH: /media
+    volumes:  
+     - video_storage:/usr/media
+    command: video_server -env /api/.env
+   
+    environment:
+      JAEGER_ENDPOINT: http://localhost:14268/api/traces
+      KAFKA_TOPIC: videos
+      KAFKA_HOST: localhost
+      VIDEO_STORAGE_PATH: /media
+
+
+
+   
 networks:
   backend:
+
+volumes:
+  video_storage:
