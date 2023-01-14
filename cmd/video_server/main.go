@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -25,7 +26,7 @@ import (
 	"github.com/nei7/ntube/internal/repo"
 	"github.com/nei7/ntube/internal/rest"
 	"github.com/nei7/ntube/internal/service"
-	"github.com/nei7/ntube/pkg/video"
+	"github.com/nei7/ntube/pkg"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -161,12 +162,15 @@ func newGRPCServer(conf grpcServerConfig) *grpc.Server {
 	search := kafka_service.NewVideo(conf.kafka, viper.GetString("KAFKA_TOPIC"))
 	videoService := service.NewVideoService(videoRepo, search)
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
-	ffmpegService := service.NewFfpmegService(viper.GetString("VIDEO_STORAGE_PATH"))
+	ffmpegService := service.NewFfpmegService()
 
-	videoServer := grpc_service.NewVideoServer(viper.GetString("VIDEO_STORAGE_PATH"), ffmpegService, videoService, tokenManager, conf.Logger)
+	storagePath := viper.GetString("VIDEO_STORAGE_PATH")
+	videoUpload := service.NewVideoUpload(path.Join(storagePath, "thumbnail"), path.Join(storagePath, "mp4"), ffmpegService, videoService)
+
+	videoServer := grpc_service.NewVideoServer(videoUpload, tokenManager, conf.Logger)
 
 	grpcServer := grpc.NewServer()
-	video.RegisterVideoUploadServiceServer(grpcServer, videoServer)
+	pkg.RegisterVideoUploadServiceServer(grpcServer, videoServer)
 
 	return grpcServer
 }

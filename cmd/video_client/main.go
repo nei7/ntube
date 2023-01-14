@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/nei7/ntube/internal/service"
-	"github.com/nei7/ntube/pkg/video"
+	"github.com/nei7/ntube/pkg"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -34,7 +34,7 @@ func main() {
 	if err != nil {
 		log.Fatal("error while connecting", err)
 	}
-	videoClient := video.NewVideoUploadServiceClient(conn)
+	videoClient := pkg.NewVideoUploadServiceClient(conn)
 
 	f, err := os.Open(videoPath)
 	if err != nil {
@@ -58,10 +58,10 @@ func main() {
 		log.Fatal("failed to establish connection with video server", err)
 	}
 
-	err = stream.Send(&video.UploadVideoRequest{
-		Data: &video.UploadVideoRequest_Info{
-			Info: &video.VideoInfo{
-				Title: "video",
+	err = stream.Send(&pkg.UploadVideoRequest{
+		Data: &pkg.UploadVideoRequest_Info{
+			Info: &pkg.VideoInfo{
+				Title: "pkg",
 			},
 		},
 	})
@@ -82,8 +82,8 @@ func main() {
 			log.Fatal("can't send chunk data to server", err)
 		}
 
-		err = stream.Send(&video.UploadVideoRequest{
-			Data: &video.UploadVideoRequest_ChunkData{
+		err = stream.Send(&pkg.UploadVideoRequest{
+			Data: &pkg.UploadVideoRequest_ChunkData{
 				ChunkData: buf[:n],
 			},
 		})

@@ -4,7 +4,7 @@
 // - protoc             v3.21.12
 // source: video.proto
 
-package video
+package pkg
 
 import (
 	context "context"

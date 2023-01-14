@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "/video";
+option go_package = "/pkg";
 
 message UploadVideoRequest {
     oneof data {

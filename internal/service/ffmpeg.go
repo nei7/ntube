@@ -4,29 +4,27 @@ import (
 	"fmt"
 	"math"
 	"os/exec"
-	"path"
 	"strconv"
 	"strings"
 )
 
 type FfpmegService interface {
-	ExtractHLS(filename string) error
-	DoScreenshot(filename string) error
+	ExtractHLS(input string, output string) error
+	DoScreenshot(input string, output string) error
 	GetVideoDuration(path string) (float64, error)
 }
 
 type ffmpegService struct {
-	basePath string
 }
 
-func NewFfpmegService(basePath string) *ffmpegService {
-	return &ffmpegService{basePath}
+func NewFfpmegService() *ffmpegService {
+	return &ffmpegService{}
 }
 
-func (s *ffmpegService) ExtractHLS(filename string) error {
+func (s *ffmpegService) ExtractHLS(input string, output string) error {
 	cmd := exec.Command(
 		"/usr/bin/ffmpeg",
-		"-i", path.Join(s.basePath, "tmp", filename+".tmp"),
+		"-i", input,
 		// video size
 		"-vf", "scale=-1:720",
 		// video codec
@@ -37,7 +35,7 @@ func (s *ffmpegService) ExtractHLS(filename string) error {
 		"-c:a", "libmp3lame",
 		// format
 		"-f", "mp4",
-		path.Join(s.basePath, "mp4", filename+".mp4"),
+		output,
 	)
 
 	err := cmd.Start()
@@ -48,10 +46,9 @@ func (s *ffmpegService) ExtractHLS(filename string) error {
 	return nil
 }
 
-func (s *ffmpegService) DoScreenshot(filename string) error {
-	tmpPath := path.Join(s.basePath, "tmp", filename+".tmp")
+func (s *ffmpegService) DoScreenshot(input string, output string) error {
 
-	duration, err := s.GetVideoDuration(tmpPath)
+	duration, err := s.GetVideoDuration(input)
 	if err != nil {
 		return err
 	}
@@ -59,7 +56,7 @@ func (s *ffmpegService) DoScreenshot(filename string) error {
 	cmd := exec.Command(
 		"/usr/bin/ffmpeg",
 		// input
-		"-i", tmpPath,
+		"-i", input,
 		// seek the position to the specified timestamp
 		"-ss", fmt.Sprintf("00:%d:%d", int(math.Floor((duration/3)/60)), int(math.Floor(duration/3))),
 		// only one frame
@@ -67,10 +64,10 @@ func (s *ffmpegService) DoScreenshot(filename string) error {
 		// control output quality
 		"-q:v", "2",
 		// output
-		path.Join(s.basePath, "thumbnail", filename+".jpg"),
+		output,
 	)
 
-	err = cmd.Start()
+	_, err = cmd.CombinedOutput()
 	if err != nil {
 		return err
 	}

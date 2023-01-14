@@ -82,51 +82,51 @@ services:
     hostname: kibana
     depends_on:
       - elasticsearch
-  rest_server:
+  # rest_server:
 
-    build:
-      context: .
-      dockerfile: ./docker/rest_server/Dockerfile
-    ports:
-      - "3000:3000"
-    command: rest_server -env /api/.env
-    environment:
-      - name=value
-    depends_on:
-     - postgres
-     - jaeger
-     - prometheus
-     - otel_collector
-  elasticsearch_indexer:
-    build:
-      context: .
-      dockerfile: ./docker/elasticsearch_indexer/Dockerfile
-    command: elasticsearch_indexer -env /api/.env
-    environment:
-      KAFKA_TOPIC: videos
-      KAFKA_HOST: localhost
-    depends_on:
-      - kafka
-      - zookeeper
-      - prometheus
-      - otel_collector
-      - jaeger
-      - elasticsearch
-  video_server:
-    build:
-      context: .
-      dockerfile: ./docker/video_server/Dockerfile
-      args:
-       VIDEO_STORAGE_PATH: /media
-    volumes:  
-     - video_storage:/usr/media
-    command: video_server -env /api/.env
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/rest_server/Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   command: rest_server -env /api/.env
+  #   environment:
+  #     - name=value
+  #   depends_on:
+  #    - postgres
+  #    - jaeger
+  #    - prometheus
+  #    - otel_collector
+  # elasticsearch_indexer:
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/elasticsearch_indexer/Dockerfile
+  #   command: elasticsearch_indexer -env /api/.env
+  #   environment:
+  #     KAFKA_TOPIC: videos
+  #     KAFKA_HOST: localhost
+  #   depends_on:
+  #     - kafka
+  #     - zookeeper
+  #     - prometheus
+  #     - otel_collector
+  #     - jaeger
+  #     - elasticsearch
+  # video_server:
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/video_server/Dockerfile
+  #     args:
+  #      VIDEO_STORAGE_PATH: /media
+  #   volumes:  
+  #    - video_storage:/usr/media
+  #   command: video_server -env /api/.env
    
-    environment:
-      JAEGER_ENDPOINT: http://localhost:14268/api/traces
-      KAFKA_TOPIC: videos
-      KAFKA_HOST: localhost
-      VIDEO_STORAGE_PATH: /media
+  #   environment:
+  #     JAEGER_ENDPOINT: http://localhost:14268/api/traces
+  #     KAFKA_TOPIC: videos
+  #     KAFKA_HOST: localhost
+  #     VIDEO_STORAGE_PATH: /media
 
 
 
