@@ -13,12 +13,15 @@ import (
 	"syscall"
 	"time"
 
+	esv7 "github.com/elastic/go-elasticsearch/v7"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/go-chi/chi"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nei7/ntube/internal/db"
+	"github.com/nei7/ntube/internal/elasticsearch"
 	"github.com/nei7/ntube/internal/grpc_service"
 	"github.com/nei7/ntube/internal/kafka_service"
 	"github.com/nei7/ntube/internal/middlewares"
@@ -72,6 +75,11 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 		return nil, err
 	}
 
+	esClient, err := elasticsearch.NewElasticSearch()
+	if err != nil {
+		return nil, err
+	}
+
 	kafkaConfig := kafka_service.NewKafkaConfig()
 	kafka, err := kafka_service.NewKafkaProducer(kafkaConfig)
 	if err != nil {
@@ -88,21 +96,23 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 		return nil, err
 	}
 
-	logging := middlewares.LoggerMiddleware(*logger)
-
 	srv, err := newHttpServer(httpServerConfig{
-		addr:        http_addr,
-		Logger:      logger,
-		middlewares: []func(next http.Handler) http.Handler{logging},
+		addr:          http_addr,
+		logger:        logger,
+		middlewares:   []func(next http.Handler) http.Handler{middlewares.LoggerMiddleware(*logger)},
+		elasticSearch: esClient,
+		kafka:         kafka,
+		pool:          pool,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	grpcSrv := newGRPCServer(grpcServerConfig{
-		Logger: logger,
-		kafka:  kafka,
-		pool:   pool,
+		logger:        logger,
+		kafka:         kafka,
+		pool:          pool,
+		elasticSearch: esClient,
 	})
 
 	errChan := make(chan error, 1)
@@ -122,6 +132,7 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 			stop()
 			close(errChan)
 		}()
+
 		srv.SetKeepAlivesEnabled(false)
 
 		if err := srv.Shutdown(ctxTimeout); err != nil {
@@ -136,11 +147,16 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 	}()
 
 	go func() {
-		logger.Info("Listening and serving", zap.String("grpc_address", grpc_addr), zap.String("http_address", http_addr))
+		logger.Info("Listening and serving", zap.String("grpc_address", grpc_addr))
 
 		if err := grpcSrv.Serve(lis); err != nil {
 			errChan <- err
 		}
+
+	}()
+
+	go func() {
+		logger.Info("Listening and serving", zap.String("http_address", http_addr))
 
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
@@ -151,23 +167,27 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 }
 
 type grpcServerConfig struct {
-	Logger *zap.Logger
-	kafka  *kafka.Producer
-	pool   *pgxpool.Pool
+	logger        *zap.Logger
+	kafka         *kafka.Producer
+	pool          *pgxpool.Pool
+	elasticSearch *esv7.Client
 }
 
 func newGRPCServer(conf grpcServerConfig) *grpc.Server {
 	videoRepo := repo.NewVideRepo(conf.pool)
 
-	search := kafka_service.NewVideo(conf.kafka, viper.GetString("KAFKA_TOPIC"))
-	videoService := service.NewVideoService(videoRepo, search)
+	msgBroker := kafka_service.NewVideo(conf.kafka, viper.GetString("KAFKA_TOPIC"))
+	search := elasticsearch.NewVideo(conf.elasticSearch)
+
+	videoService := service.NewVideoService(conf.logger, videoRepo, search, msgBroker)
+
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
 	ffmpegService := service.NewFfpmegService()
 
 	storagePath := viper.GetString("VIDEO_STORAGE_PATH")
 	videoUpload := service.NewVideoUpload(path.Join(storagePath, "thumbnail"), path.Join(storagePath, "mp4"), ffmpegService, videoService)
 
-	videoServer := grpc_service.NewVideoServer(videoUpload, tokenManager, conf.Logger)
+	videoServer := grpc_service.NewVideoServer(videoUpload, tokenManager, conf.logger)
 
 	grpcServer := grpc.NewServer()
 	pkg.RegisterVideoUploadServiceServer(grpcServer, videoServer)
@@ -176,9 +196,12 @@ func newGRPCServer(conf grpcServerConfig) *grpc.Server {
 }
 
 type httpServerConfig struct {
-	addr        string
-	Logger      *zap.Logger
-	middlewares []func(next http.Handler) http.Handler
+	addr          string
+	logger        *zap.Logger
+	middlewares   []func(next http.Handler) http.Handler
+	elasticSearch *esv7.Client
+	pool          *pgxpool.Pool
+	kafka         *kafka.Producer
 }
 
 func newHttpServer(conf httpServerConfig) (*http.Server, error) {
@@ -188,7 +211,12 @@ func newHttpServer(conf httpServerConfig) (*http.Server, error) {
 		router.Use(mw)
 	}
 
-	rest.NewVideoHandler(viper.GetString("VIDEO_STORAGE_PATH")).Register(router)
+	search := elasticsearch.NewVideo(conf.elasticSearch)
+	videoRepo := repo.NewVideRepo(conf.pool)
+	msgBroker := kafka_service.NewVideo(conf.kafka, viper.GetString("KAFKA_TOPIC"))
+
+	svc := service.NewVideoService(conf.logger, videoRepo, search, msgBroker)
+	rest.NewVideoHandler(viper.GetString("VIDEO_STORAGE_PATH"), svc).Register(router)
 	router.Handle("/metrics", promhttp.Handler())
 
 	limiter := tollbooth.NewLimiter(3, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})

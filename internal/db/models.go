@@ -11,9 +11,14 @@ import (
 )
 
 type User struct {
-	ID       uuid.UUID
-	Email    string
-	Password string
+	ID          uuid.UUID
+	Email       string
+	Password    string
+	Username    string
+	CreatedAt   sql.NullTime
+	Avatar      sql.NullString
+	Description sql.NullString
+	Followers   int32
 }
 
 type Video struct {

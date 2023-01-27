@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/didip/tollbooth v4.0.2+incompatible
+	github.com/elastic/go-elasticsearch/v7 v7.17.7
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/render v1.0.2
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
@@ -12,13 +13,11 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgx/v4 v4.17.2
-	github.com/lib/pq v1.10.2
+	github.com/mercari/go-circuitbreaker v0.0.2
 	github.com/prometheus/client_golang v1.14.0
 	github.com/spf13/viper v1.14.0
-	go.opentelemetry.io/contrib/instrumentation/runtime v0.37.0
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
-	go.opentelemetry.io/otel/exporters/prometheus v0.34.0
 	go.opentelemetry.io/otel/sdk v1.11.2
 	go.opentelemetry.io/otel/trace v1.11.2
 	go.uber.org/zap v1.24.0
@@ -30,9 +29,10 @@ require (
 require (
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
+	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cenkalti/backoff/v3 v3.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/elastic/go-elasticsearch/v7 v7.17.7 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -59,8 +59,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	go.opentelemetry.io/otel/metric v0.34.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v0.34.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/net v0.4.0 // indirect

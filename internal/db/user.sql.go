@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const CreateUser = `-- name: CreateUser :one
@@ -16,7 +18,7 @@ INSERT INTO users (
 ) VALUES (
     $1,
     $2
-) RETURNING id, email, password
+) RETURNING id, email, password, username, created_at, avatar, description, followers
 `
 
 type CreateUserParams struct {
@@ -27,17 +29,55 @@ type CreateUserParams struct {
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, CreateUser, arg.Email, arg.Password)
 	var i User
-	err := row.Scan(&i.ID, &i.Email, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.Username,
+		&i.CreatedAt,
+		&i.Avatar,
+		&i.Description,
+		&i.Followers,
+	)
 	return i, err
 }
 
 const GetUser = `-- name: GetUser :one
-SELECT id, email, password FROM users WHERE email = $1 LIMIT 1
+SELECT id, email, password, username, created_at, avatar, description, followers FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUser(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRow(ctx, GetUser, email)
 	var i User
-	err := row.Scan(&i.ID, &i.Email, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.Username,
+		&i.CreatedAt,
+		&i.Avatar,
+		&i.Description,
+		&i.Followers,
+	)
+	return i, err
+}
+
+const GetUserById = `-- name: GetUserById :one
+SELECT id, email, password, username, created_at, avatar, description, followers FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, GetUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.Username,
+		&i.CreatedAt,
+		&i.Avatar,
+		&i.Description,
+		&i.Followers,
+	)
 	return i, err
 }

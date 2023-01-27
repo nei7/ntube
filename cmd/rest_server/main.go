@@ -74,14 +74,12 @@ func run(env, addr string) (<-chan error, error) {
 		return nil, err
 	}
 
-	logging := middlewares.LoggerMiddleware(*logger)
-
 	srv, err := newServer(serverConfig{
 		addr:        addr,
 		DB:          pool,
 		jwtKey:      viper.GetString("JWT_KEY"),
 		Logger:      logger,
-		middlewares: []func(next http.Handler) http.Handler{logging},
+		middlewares: []func(next http.Handler) http.Handler{middlewares.LoggerMiddleware(*logger)},
 	})
 	if err != nil {
 		return nil, err

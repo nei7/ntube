@@ -46,7 +46,7 @@ func main() {
 
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
 
-	jwt, err := tokenManager.NewJWT("e2576c5b-adba-4047-97ba-a0f1cd6ad924", time.Now().Add(time.Hour*2).Unix())
+	jwt, err := tokenManager.NewJWT("5333957c-79eb-4823-85d9-20a7c3eb055b", time.Now().Add(time.Hour*2).Unix())
 	if err != nil {
 		log.Fatal("failed to generate jwt token")
 	}
@@ -61,7 +61,7 @@ func main() {
 	err = stream.Send(&pkg.UploadVideoRequest{
 		Data: &pkg.UploadVideoRequest_Info{
 			Info: &pkg.VideoInfo{
-				Title: "pkg",
+				Title: "nei's video pkg",
 			},
 		},
 	})

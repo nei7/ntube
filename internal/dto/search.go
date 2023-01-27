@@ -1,7 +1,7 @@
 package dto
 
 type VideoSearchParams struct {
-	Title *string
-	From  int64
-	Size  int64
+	Title *string `json:"title"`
+	From  int64   `json:"from"`
+	Size  int64   `json:"size"`
 }

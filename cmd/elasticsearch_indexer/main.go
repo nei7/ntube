@@ -79,7 +79,7 @@ func run(env string) (<-chan error, error) {
 	srv := Server{
 		logger: logger,
 		kafka:  kafka,
-		video:  elasticsearch.NewElasticVideo(esClient),
+		video:  elasticsearch.NewVideo(esClient),
 		doneC:  make(chan struct{}),
 		closeC: make(chan struct{}),
 	}
