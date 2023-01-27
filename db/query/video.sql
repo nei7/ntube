@@ -15,3 +15,4 @@ UPDATE videos SET
 
 -- name: GetUserVideos :many
 SELECT * FROM videos WHERE owner_id = $1 ORDER BY uploaded_at LIMIT $2;
+
