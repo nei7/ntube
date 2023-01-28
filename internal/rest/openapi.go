@@ -30,11 +30,11 @@ func NewOpenAPI3() openapi3.T {
 		Servers: openapi3.Servers{
 			&openapi3.Server{
 				Description: "Rest server",
-				URL:         "http://127.0.0.1:3001",
+				URL:         "http://localhost:3000",
 			},
 			&openapi3.Server{
 				Description: "Video server",
-				URL:         "http://127.0.0.1:3002",
+				URL:         "http://localhost:3001",
 			},
 		},
 		Components: &openapi3.Components{},

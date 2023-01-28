@@ -18,7 +18,7 @@ func newOtelSpan(ctx context.Context, name string) trace.Span {
 	return span
 }
 
-func NewElasticSearch() (es *esv7.Client, err error) {
+func NewClient() (es *esv7.Client, err error) {
 	es, err = esv7.NewDefaultClient()
 	if err != nil {
 		return

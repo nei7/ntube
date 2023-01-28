@@ -137,8 +137,6 @@ services:
   #     KAFKA_HOST: localhost
   #     VIDEO_STORAGE_PATH: /media
 
-
-
    
 networks:
   backend:

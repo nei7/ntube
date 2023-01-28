@@ -52,22 +52,24 @@ func run(env string) (<-chan error, error) {
 		return nil, err
 	}
 
-	var config kafka_service.KafkaConfig
-	if err = viper.Unmarshal(&config); err != nil {
-		return nil, err
-	}
-
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
-	}
-
-	esClient, err := elasticsearch.NewElasticSearch()
+	esClient, err := elasticsearch.NewClient()
 	if err != nil {
 		return nil, err
 	}
 
-	kafka, err := kafka_service.NewKafkaConsumer(config, "eslasticsearch_indexer")
+	kafkaConfig := kafka.ConfigMap{
+		"bootstrap.servers":  viper.GetString("KAFKA_HOST"),
+		"group.id":           "elasticsearch_indexer",
+		"auto.offset.reset":  "earliest",
+		"enable.auto.commit": false,
+	}
+
+	client, err := kafka.NewConsumer(&kafkaConfig)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := client.Subscribe(viper.GetString("KAFKA_TOPIC"), nil); err != nil {
 		return nil, err
 	}
 
@@ -78,7 +80,7 @@ func run(env string) (<-chan error, error) {
 
 	srv := Server{
 		logger: logger,
-		kafka:  kafka,
+		kafka:  client,
 		video:  elasticsearch.NewVideo(esClient),
 		doneC:  make(chan struct{}),
 		closeC: make(chan struct{}),
@@ -98,7 +100,7 @@ func run(env string) (<-chan error, error) {
 		defer func() {
 			_ = logger.Sync()
 
-			_ = kafka.Unsubscribe()
+			_ = client.Unsubscribe()
 
 			stop()
 			cancel()

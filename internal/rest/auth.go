@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/nei7/ntube/internal/db"
 	"github.com/nei7/ntube/internal/dto"
 	"github.com/nei7/ntube/internal/service"
 	"golang.org/x/crypto/bcrypt"
@@ -60,12 +60,11 @@ func (h *UserHandler) signUp(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Create(r.Context(), req)
 	if err != nil {
-
-		if strings.HasPrefix(err.Error(), "ERROR: duplicate key value violates unique constraint") {
+		if errors.Is(err, db.DuplicateKeyValueError) {
 			renderErrorResponse(w, r, errors.New("user already exists"), http.StatusConflict)
 			return
-
 		}
+
 		renderErrorResponse(w, r, errors.New("Failed to create user"), http.StatusInternalServerError)
 		return
 	}

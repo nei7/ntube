@@ -22,12 +22,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nei7/ntube/internal/db"
 	"github.com/nei7/ntube/internal/elasticsearch"
-	"github.com/nei7/ntube/internal/grpc_service"
 	"github.com/nei7/ntube/internal/kafka_service"
 	"github.com/nei7/ntube/internal/middlewares"
 	"github.com/nei7/ntube/internal/opentelemetry"
 	"github.com/nei7/ntube/internal/repo"
 	"github.com/nei7/ntube/internal/rest"
+	"github.com/nei7/ntube/internal/server"
 	"github.com/nei7/ntube/internal/service"
 	"github.com/nei7/ntube/pkg"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -75,13 +75,16 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 		return nil, err
 	}
 
-	esClient, err := elasticsearch.NewElasticSearch()
+	esClient, err := elasticsearch.NewClient()
 	if err != nil {
 		return nil, err
 	}
 
-	kafkaConfig := kafka_service.NewKafkaConfig()
-	kafka, err := kafka_service.NewKafkaProducer(kafkaConfig)
+	config := kafka.ConfigMap{
+		"bootstrap.servers": viper.GetString("KAFKA_HOST"),
+	}
+
+	client, err := kafka.NewProducer(&config)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +104,7 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 		logger:        logger,
 		middlewares:   []func(next http.Handler) http.Handler{middlewares.LoggerMiddleware(*logger)},
 		elasticSearch: esClient,
-		kafka:         kafka,
+		kafka:         client,
 		pool:          pool,
 	})
 	if err != nil {
@@ -110,7 +113,7 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 
 	grpcSrv := newGRPCServer(grpcServerConfig{
 		logger:        logger,
-		kafka:         kafka,
+		kafka:         client,
 		pool:          pool,
 		elasticSearch: esClient,
 	})
@@ -129,6 +132,7 @@ func run(env, grpc_addr, http_addr string) (<-chan error, error) {
 			pool.Close()
 			defer cancel()
 			defer shutdown(ctx)
+			client.Close()
 			stop()
 			close(errChan)
 		}()
@@ -187,7 +191,7 @@ func newGRPCServer(conf grpcServerConfig) *grpc.Server {
 	storagePath := viper.GetString("VIDEO_STORAGE_PATH")
 	videoUpload := service.NewVideoUpload(path.Join(storagePath, "thumbnail"), path.Join(storagePath, "mp4"), ffmpegService, videoService)
 
-	videoServer := grpc_service.NewVideoServer(videoUpload, tokenManager, conf.logger)
+	videoServer := server.NewVideoServer(videoUpload, tokenManager, conf.logger)
 
 	grpcServer := grpc.NewServer()
 	pkg.RegisterVideoUploadServiceServer(grpcServer, videoServer)
