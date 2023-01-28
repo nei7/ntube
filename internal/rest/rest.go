@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-const otelName = "github.com/MarioCarrion/todo-api/internal/rest"
+const otelName = "github.com/nei7/ntube/rest"
 
 type ErrorResponse struct {
 	Error       string            `json:"error"`

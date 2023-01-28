@@ -11,7 +11,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=ntube
     volumes:
-       - ./data:/var/lib/postgresql/data
+       - pgdata:/var/lib/postgresql/data
   pgadmin:
     container_name: pgadmin4_container
     image: dpage/pgadmin4
@@ -145,3 +145,4 @@ networks:
 
 volumes:
   video_storage:
+  pgdata:

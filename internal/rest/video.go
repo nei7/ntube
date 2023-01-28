@@ -24,7 +24,7 @@ func NewVideoHandler(videoStoragePath string, svc service.VideoService) *VideoHa
 
 func (h *VideoHandler) Register(r *chi.Mux) {
 	r.Get("/videos/{video}", h.serve)
-	r.Post("/videos", h.search)
+	r.Post("/videos/search", h.search)
 }
 
 func (h *VideoHandler) serve(w http.ResponseWriter, r *http.Request) {

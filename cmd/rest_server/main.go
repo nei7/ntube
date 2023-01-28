@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"flag"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -25,6 +27,9 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
+
+//go:embed static/*
+var content embed.FS
 
 func main() {
 	var env, addr string
@@ -145,6 +150,10 @@ func newServer(conf serverConfig) (*http.Server, error) {
 
 	rest.NewUserHandler(userService, tokenManager).Register(router)
 	router.Handle("/metrics", promhttp.Handler())
+	rest.RegisterOpenAPI(router)
+
+	fsys, _ := fs.Sub(content, "static")
+	router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(fsys))))
 
 	limiter := tollbooth.NewLimiter(3, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
 	rateLimitHandler := tollbooth.LimitHandler(limiter, router)

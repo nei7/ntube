@@ -31,6 +31,18 @@ func (h *UserHandler) Register(r *chi.Mux) {
 	r.Post("/renew", h.renewToken)
 }
 
+type userResponse struct {
+	email         string
+	username      string
+	id            string
+	followers     int32
+	description   string
+	avatar        string
+	created_at    string
+	access_token  string
+	refresh_token string
+}
+
 func (h *UserHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateUserParams
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -58,9 +70,27 @@ func (h *UserHandler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderResponse(w, r, map[string]string{
-		"email": user.Email,
-		"id":    user.ID.String(),
+	accessToken, err := h.tokenManager.NewJWT(user.ID.String(), time.Now().Add(15*time.Minute).Unix())
+	if err != nil {
+		renderErrorResponse(w, r, errors.New("Failed to generate access token"), http.StatusInternalServerError)
+		return
+	}
+
+	refreshToken, err := h.tokenManager.NewJWT(user.ID.String(), time.Now().Add(7*24*time.Hour).Unix())
+	if err != nil {
+		renderErrorResponse(w, r, errors.New("Failed to generate refresh token"), http.StatusInternalServerError)
+		return
+	}
+
+	renderResponse(w, r, userResponse{
+		email:         user.Email,
+		username:      user.Username,
+		id:            user.ID.String(),
+		avatar:        user.Avatar.String,
+		created_at:    user.CreatedAt.Time.String(),
+		followers:     user.Followers,
+		access_token:  accessToken,
+		refresh_token: refreshToken,
 	}, http.StatusCreated)
 }
 
@@ -95,12 +125,16 @@ func (h *UserHandler) logIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderResponse(w, r, map[string]string{
-		"email":        user.Email,
-		"id":           user.ID.String(),
-		"refreshToken": refreshToken,
-		"accessToken":  accessToken,
-	}, http.StatusCreated)
+	renderResponse(w, r, userResponse{
+		email:         user.Email,
+		username:      user.Username,
+		id:            user.ID.String(),
+		avatar:        user.Avatar.String,
+		created_at:    user.CreatedAt.Time.String(),
+		followers:     user.Followers,
+		access_token:  accessToken,
+		refresh_token: refreshToken,
+	}, http.StatusOK)
 }
 
 type renewAccessTokenRequest struct {
