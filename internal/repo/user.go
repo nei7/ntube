@@ -28,6 +28,7 @@ func (r *UserRepository) Create(ctx context.Context, params dto.CreateUserParams
 	user, err := r.q.CreateUser(ctx, db.CreateUserParams{
 		Password: params.Password,
 		Email:    params.Email,
+		Username: params.Username,
 	})
 
 	return user, err

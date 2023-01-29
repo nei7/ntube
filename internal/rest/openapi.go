@@ -34,7 +34,7 @@ func NewOpenAPI3() openapi3.T {
 			},
 			&openapi3.Server{
 				Description: "Video server",
-				URL:         "http://localhost:3001",
+				URL:         "http://localhost:3002",
 			},
 		},
 		Components: &openapi3.Components{},
@@ -73,7 +73,8 @@ func NewOpenAPI3() openapi3.T {
 					WithProperty("email", openapi3.NewStringSchema().
 						WithMinLength(1)).
 					WithProperty("password", openapi3.NewStringSchema().
-						WithMinLength(1))),
+						WithMinLength(1)).
+					WithProperty("username", openapi3.NewStringSchema())),
 		},
 		"SearchVideoRequest": &openapi3.RequestBodyRef{
 			Value: openapi3.NewRequestBody().

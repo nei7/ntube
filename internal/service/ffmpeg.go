@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"math"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
+	"sync"
+
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
 type FfpmegService interface {
-	ExtractHLS(input string, output string) error
-	DoScreenshot(input string, output string) error
-	GetVideoDuration(path string) (float64, error)
+	ProcessVideo(input, output_dir string) error
 }
 
 type ffmpegService struct {
@@ -21,61 +23,64 @@ func NewFfpmegService() *ffmpegService {
 	return &ffmpegService{}
 }
 
-func (s *ffmpegService) ExtractHLS(input string, output string) error {
-	cmd := exec.Command(
-		"/usr/bin/ffmpeg",
-		"-i", input,
-		// video size
-		"-vf", "scale=-1:720",
-		// video codec
-		"-c:v", "libx264",
-		// video quality 51 is the worst quality and 1 the best
-		"-crf", "21",
-		// audio codec
-		"-c:a", "libmp3lame",
-		// format
-		"-f", "mp4",
-		output,
-	)
-
-	err := cmd.Start()
+func (s *ffmpegService) ProcessVideo(input, output_dir string) (err error) {
+	err = s.createThumbnail(input, path.Join(output_dir, "thumbnail1.jpg"), 3)
 	if err != nil {
-		return err
+		return
 	}
 
-	return nil
+	return s.ConvertVideo(input, output_dir)
 }
 
-func (s *ffmpegService) DoScreenshot(input string, output string) error {
-
-	duration, err := s.GetVideoDuration(input)
-	if err != nil {
-		return err
+func (s *ffmpegService) ConvertVideo(input, output string) error {
+	args := ffmpeg.KwArgs{
+		"c:v": "libx264",
+		"crf": "21",
+		"c:a": "libmp3lame",
+		"f":   "mp4",
 	}
 
-	cmd := exec.Command(
-		"/usr/bin/ffmpeg",
-		// input
-		"-i", input,
-		// seek the position to the specified timestamp
-		"-ss", fmt.Sprintf("00:%d:%d", int(math.Floor((duration/3)/60)), int(math.Floor(duration/3))),
-		// only one frame
-		"-vframes", "1",
-		// control output quality
-		"-q:v", "2",
-		// output
-		output,
-	)
-
-	_, err = cmd.CombinedOutput()
-	if err != nil {
-		return err
+	qualities := map[string]string{
+		"720p": "scale=-1:720",
+		"360p": "scale=-1:360",
 	}
 
-	return nil
+	videoInput := ffmpeg.Input(input)
+
+	errChan := make(chan error, 2)
+	var wg sync.WaitGroup
+
+	for name, v := range qualities {
+		go func(name, v string) {
+			args["vf"] = v
+			err := videoInput.Output(path.Join(output, name+".mp4"), args).Run()
+			if err != nil {
+				errChan <- err
+			}
+			wg.Done()
+		}(name, v)
+	}
+
+	wg.Add(2)
+
+	wg.Wait()
+
+	close(errChan)
+
+	return <-errChan
 }
 
-func (s *ffmpegService) GetVideoDuration(path string) (float64, error) {
+func (s *ffmpegService) createThumbnail(input string, output string, position float64) error {
+	duration := s.getVideoDuration(input)
+	position = duration / position
+	return ffmpeg.Input(input).Output(output, ffmpeg.KwArgs{
+		"ss":      fmt.Sprintf("00:%d:%d", int(math.Floor(position/60)), int(math.Floor(position))),
+		"vframes": "1",
+		"q:v":     "2",
+	}).OverWriteOutput().Run()
+}
+
+func (s *ffmpegService) getVideoDuration(path string) float64 {
 	cmd := exec.Command(
 		"ffprobe",
 		"-v", "error",
@@ -83,16 +88,13 @@ func (s *ffmpegService) GetVideoDuration(path string) (float64, error) {
 		"-of", "default=noprint_wrappers=1:nokey=1",
 		path,
 	)
-
-	o, err := cmd.Output()
+	output, err := cmd.Output()
 	if err != nil {
-		return 0, err
+		return 0
 	}
-
-	duration, err := strconv.ParseFloat(strings.Replace(string(o), "\n", "", 1), 64)
+	duration, err := strconv.ParseFloat(strings.Replace(string(output), "\n", "", 1), 64)
 	if err != nil {
-		return 0, err
+		return 0
 	}
-
-	return duration, nil
+	return duration
 }

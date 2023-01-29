@@ -60,6 +60,7 @@ func (s *VideoServer) UploadVideo(stream pkg.VideoUploadService_UploadVideoServe
 	if err != nil {
 		return status.Error(codes.Internal, "cannot save image to the store")
 	}
+
 	defer file.Close()
 
 	req, err := stream.Recv()
@@ -77,11 +78,12 @@ func (s *VideoServer) UploadVideo(stream pkg.VideoUploadService_UploadVideoServe
 		OwnerID:     ownerId,
 	})
 	if err != nil {
+
 		return err
 	}
 
 	err = stream.SendAndClose(&pkg.UploadVideoResponse{
-		Id:   file.Name(),
+		Id:   id,
 		Size: videoSize,
 	})
 

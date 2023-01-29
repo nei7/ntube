@@ -11,63 +11,54 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var defaultFilePerm = os.FileMode(0664)
+var defaultFilePerm = os.FileMode(0777)
 
 type VideoUpload interface {
 	NewUpload() (*os.File, string, error)
-	ThumbnailPath() string
-	VideoPath() string
 	Process(ctx context.Context, video db.CreateVideoParams) error
 }
 
 type videoUpload struct {
-	thumbnailPath string
-	videoPath     string
+	uploadPath    string
 	ffmpegService FfpmegService
 	videoService  VideoService
 }
 
-func NewVideoUpload(thumbnailPath, videoPath string, fmffmpegService FfpmegService, videoService VideoService) *videoUpload {
-	return &videoUpload{thumbnailPath, videoPath, fmffmpegService, videoService}
+func NewVideoUpload(uploadPath string, fmffmpegService FfpmegService, videoService VideoService) *videoUpload {
+	return &videoUpload{uploadPath, fmffmpegService, videoService}
 }
 
-func (s *videoUpload) NewUpload() (*os.File, string, error) {
-	id := uuid.New()
+func (s *videoUpload) NewUpload() (file *os.File, id string, err error) {
+	id = uuid.New().String()
+	err = os.Mkdir(path.Join(s.uploadPath, id), defaultFilePerm)
+	if err != nil {
+		return
+	}
 
-	file, err := os.OpenFile(s.binPath(id.String()), os.O_CREATE|os.O_WRONLY, defaultFilePerm)
-
-	return file, id.String(), err
+	file, err = os.OpenFile(path.Join(s.uploadPath, id, "upload"), os.O_CREATE|os.O_WRONLY, defaultFilePerm)
+	return
 }
 
 func (s *videoUpload) Process(ctx context.Context, video db.CreateVideoParams) error {
+	defer otelSpan(ctx, "VideoUpload.Process").End()
+
 	vid, err := s.videoService.Create(ctx, video)
 	if err != nil {
 		return err
 	}
 
-	binPath := s.binPath(vid.Path)
+	uploadDir := path.Join(s.uploadPath, vid.Path)
+	input := path.Join(uploadDir, "upload")
 
-	err = s.ffmpegService.ExtractHLS(binPath, path.Join(s.videoPath, video.Path+".mp4"))
+	err = s.ffmpegService.ProcessVideo(input, uploadDir)
+
+	if os.Remove(input) != nil {
+		return status.Error(codes.Internal, "failed to remove video")
+	}
+
 	if err != nil {
 		return status.Error(codes.Internal, "failed to convert video")
 	}
 
-	err = s.ffmpegService.DoScreenshot(binPath, path.Join(s.thumbnailPath, video.Path+".jpg"))
-	if err != nil {
-		return err
-	}
-
 	return nil
-}
-
-func (s *videoUpload) binPath(id string) string {
-	return path.Join(os.TempDir(), id)
-}
-
-func (s *videoUpload) ThumbnailPath() string {
-	return s.thumbnailPath
-}
-
-func (s *videoUpload) VideoPath() string {
-	return s.videoPath
 }

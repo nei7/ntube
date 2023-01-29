@@ -23,20 +23,38 @@ func NewVideoHandler(videoStoragePath string, svc service.VideoService) *VideoHa
 }
 
 func (h *VideoHandler) Register(r *chi.Mux) {
-	r.Get("/videos/{video}", h.serve)
+	r.Get("/videos/{video}", h.serveVideo)
+	r.Get("/thumbnails/{thumbnail}", h.serveThumbnail)
 	r.Post("/videos/search", h.search)
 }
 
-func (h *VideoHandler) serve(w http.ResponseWriter, r *http.Request) {
-	videoName := chi.URLParam(r, "video")
+func (h *VideoHandler) serveVideo(w http.ResponseWriter, r *http.Request) {
+	folderId := chi.URLParam(r, "video")
 
-	file, err := os.Open(path.Join(h.videoStoragePath, "mp4", videoName+".mp4"))
+	quality := r.URL.Query().Get("quality")
+	if quality == "" {
+		quality = "720p"
+	}
+
+	file, err := os.Open(path.Join(h.videoStoragePath, folderId, quality+".mp4"))
 	if err != nil {
 		renderErrorResponse(w, r, errors.New("not found"), http.StatusNotFound)
 		return
 	}
 
-	http.ServeContent(w, r, videoName, time.Unix(0, 0), file)
+	http.ServeContent(w, r, folderId, time.Unix(0, 0), file)
+}
+
+func (h *VideoHandler) serveThumbnail(w http.ResponseWriter, r *http.Request) {
+	folderId := chi.URLParam(r, "thumbnail")
+
+	file, err := os.Open(path.Join(h.videoStoragePath, folderId, "thumbnail1.jpg"))
+	if err != nil {
+		renderErrorResponse(w, r, errors.New("not found"), http.StatusNotFound)
+		return
+	}
+
+	http.ServeContent(w, r, folderId, time.Unix(0, 0), file)
 }
 
 func (h *VideoHandler) search(w http.ResponseWriter, r *http.Request) {

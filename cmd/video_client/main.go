@@ -19,8 +19,10 @@ import (
 func main() {
 
 	var videoPath string
+	var userId string
 
 	flag.StringVar(&videoPath, "v", "", "video path")
+	flag.StringVar(&userId, "u", "", "userid")
 
 	flag.Parse()
 
@@ -46,7 +48,7 @@ func main() {
 
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
 
-	jwt, err := tokenManager.NewJWT("5333957c-79eb-4823-85d9-20a7c3eb055b", time.Now().Add(time.Hour*2).Unix())
+	jwt, err := tokenManager.NewJWT(userId, time.Now().Add(time.Hour*2).Unix())
 	if err != nil {
 		log.Fatal("failed to generate jwt token")
 	}

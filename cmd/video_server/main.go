@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"syscall"
 	"time"
 
@@ -188,8 +187,7 @@ func newGRPCServer(conf grpcServerConfig) *grpc.Server {
 	tokenManager := service.NewTokenManager(viper.GetString("JWT_KEY"))
 	ffmpegService := service.NewFfpmegService()
 
-	storagePath := viper.GetString("VIDEO_STORAGE_PATH")
-	videoUpload := service.NewVideoUpload(path.Join(storagePath, "thumbnail"), path.Join(storagePath, "mp4"), ffmpegService, videoService)
+	videoUpload := service.NewVideoUpload(viper.GetString("VIDEO_STORAGE_PATH"), ffmpegService, videoService)
 
 	videoServer := server.NewVideoServer(videoUpload, tokenManager, conf.logger)
 

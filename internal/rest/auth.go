@@ -32,15 +32,15 @@ func (h *UserHandler) Register(r *chi.Mux) {
 }
 
 type userResponse struct {
-	email         string
-	username      string
-	id            string
-	followers     int32
-	description   string
-	avatar        string
-	created_at    string
-	access_token  string
-	refresh_token string
+	Email         string `json:"email"`
+	Username      string `json:"username"`
+	Id            string `json:"id"`
+	Followers     int32  `json:"followers"`
+	Description   string `json:"description"`
+	Avatar        string `json:"avatar"`
+	Created_at    string `json:"created_at"`
+	Access_token  string `json:"access_token"`
+	Refresh_token string `json:"refresh_token"`
 }
 
 func (h *UserHandler) signUp(w http.ResponseWriter, r *http.Request) {
@@ -81,15 +81,15 @@ func (h *UserHandler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderResponse(w, r, userResponse{
-		email:         user.Email,
-		username:      user.Username,
-		id:            user.ID.String(),
-		avatar:        user.Avatar.String,
-		created_at:    user.CreatedAt.Time.String(),
-		followers:     user.Followers,
-		access_token:  accessToken,
-		refresh_token: refreshToken,
+	renderResponse(w, r, &userResponse{
+		Email:         user.Email,
+		Username:      user.Username,
+		Id:            user.ID.String(),
+		Avatar:        user.Avatar.String,
+		Created_at:    user.CreatedAt.Time.String(),
+		Followers:     user.Followers,
+		Access_token:  accessToken,
+		Refresh_token: refreshToken,
 	}, http.StatusCreated)
 }
 
@@ -124,15 +124,15 @@ func (h *UserHandler) logIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderResponse(w, r, userResponse{
-		email:         user.Email,
-		username:      user.Username,
-		id:            user.ID.String(),
-		avatar:        user.Avatar.String,
-		created_at:    user.CreatedAt.Time.String(),
-		followers:     user.Followers,
-		access_token:  accessToken,
-		refresh_token: refreshToken,
+	renderResponse(w, r, &userResponse{
+		Email:         user.Email,
+		Username:      user.Username,
+		Id:            user.ID.String(),
+		Avatar:        user.Avatar.String,
+		Created_at:    user.CreatedAt.Time.String(),
+		Followers:     user.Followers,
+		Access_token:  accessToken,
+		Refresh_token: refreshToken,
 	}, http.StatusOK)
 }
 
