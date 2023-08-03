@@ -1,2 +1,0 @@
-DROP EXTENSION IF EXISTS "uuid-ossp";
-DROP TABLE users;
