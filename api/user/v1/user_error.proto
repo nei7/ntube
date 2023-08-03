@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package api.user.v1;
+
+import "errors/errors.proto";
+
+option go_package = "api/user/v1;v1";
+
+
+enum UserServiceErrorReason {
+    option (errors.default_code) = 500;
+
+    UNKNOWN_ERROR = 0;
+    LOGIN_FAILED = 1;
+    REGISTER_FAILED = 2;
+    USER_NOT_FOUND = 3;
+}
