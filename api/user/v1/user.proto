@@ -9,12 +9,15 @@ import "google/api/annotations.proto";
 option go_package = "api/user/v1;v1";
 
 service UserService {
-	rpc CreateUser (CreateUserRequest) returns (CreateUserReply) {
+	rpc CreateUser (CreateUserRequest) returns (User) {
 		option (google.api.http) = {
 			post: "v1/user"
 			body: "*"
 		  };
 	}
+
+	rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdReply);
+
 	rpc UpdateUser (UpdateUserRequest) returns (UpdateUserReply);
 	rpc DeleteUser (DeleteUserRequest) returns (DeleteUserReply);
 	rpc GetUser (GetUserRequest) returns (GetUserReply);
@@ -22,11 +25,12 @@ service UserService {
 }
 
 message User {
-	string username = 1;
-	string email = 2;
-	string avatar = 3;
-	string description = 4;
-    google.protobuf.Timestamp created_at = 5;
+	string id = 1;
+	string username = 2;
+	string email = 3;
+	string avatar = 4;
+	string description = 5;
+    google.protobuf.Timestamp created_at = 6;
 }
 
 message CreateUserRequest {
@@ -35,9 +39,13 @@ message CreateUserRequest {
 	string password = 3;
 }
 
-message CreateUserReply {
-	User user = 1;
+message GetUserByIdRequest {
+	string id = 1;
 }
+
+message GetUserByIdReply {}
+
+
 
 message UpdateUserRequest {}
 message UpdateUserReply {}

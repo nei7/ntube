@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-http v2.6.3
 // - protoc             v4.23.4
-// source: api/user/v1/user.proto
+// source: user/v1/user.proto
 
 package v1
 
@@ -22,7 +22,7 @@ const _ = http.SupportPackageIsVersion1
 const OperationUserServiceCreateUser = "/api.user.v1.UserService/CreateUser"
 
 type UserServiceHTTPServer interface {
-	CreateUser(context.Context, *CreateUserRequest) (*CreateUserReply, error)
+	CreateUser(context.Context, *CreateUserRequest) (*User, error)
 }
 
 func RegisterUserServiceHTTPServer(s *http.Server, srv UserServiceHTTPServer) {
@@ -47,13 +47,13 @@ func _UserService_CreateUser0_HTTP_Handler(srv UserServiceHTTPServer) func(ctx h
 		if err != nil {
 			return err
 		}
-		reply := out.(*CreateUserReply)
+		reply := out.(*User)
 		return ctx.Result(200, reply)
 	}
 }
 
 type UserServiceHTTPClient interface {
-	CreateUser(ctx context.Context, req *CreateUserRequest, opts ...http.CallOption) (rsp *CreateUserReply, err error)
+	CreateUser(ctx context.Context, req *CreateUserRequest, opts ...http.CallOption) (rsp *User, err error)
 }
 
 type UserServiceHTTPClientImpl struct {
@@ -64,8 +64,8 @@ func NewUserServiceHTTPClient(client *http.Client) UserServiceHTTPClient {
 	return &UserServiceHTTPClientImpl{client}
 }
 
-func (c *UserServiceHTTPClientImpl) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...http.CallOption) (*CreateUserReply, error) {
-	var out CreateUserReply
+func (c *UserServiceHTTPClientImpl) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...http.CallOption) (*User, error) {
+	var out User
 	pattern := "v1/user"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserServiceCreateUser))

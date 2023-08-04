@@ -14,12 +14,10 @@ type UserService struct {
 	uc *biz.UserUsecase
 }
 
-// NewGreeterService new a greeter service.
 func NewGreeterService(uc *biz.UserUsecase) *UserService {
 	return &UserService{uc: uc}
 }
 
-// SayHello implements helloworld.GreeterServer.
-func (s *UserService) CreateUser(ctx context.Context, in *v1.CreateUserRequest) (*v1.CreateUserReply, error) {
-	return nil, nil
+func (s *UserService) CreateUser(ctx context.Context, in *v1.CreateUserRequest) (*v1.User, error) {
+	return s.uc.CreateUser(ctx, in)
 }

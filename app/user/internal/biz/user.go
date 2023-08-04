@@ -14,15 +14,8 @@ var (
 	ErrUserNotFound = errors.NotFound(v1.UserServiceErrorReason_USER_NOT_FOUND.String(), "user not found")
 )
 
-type User struct {
-	Id       int64
-	Username string
-	Email    string
-	Password string
-}
-
 type UserRepo interface {
-	CreateUser(context.Context, *User) (*User, error)
+	CreateUser(context.Context, *v1.CreateUserRequest) (*v1.User, error)
 }
 
 type UserUsecase struct {
@@ -36,7 +29,7 @@ func NewUserUsecase(repo UserRepo, logger log.Logger) *UserUsecase {
 }
 
 // CreateGreeter creates a Greeter, and returns the new Greeter.
-func (uc *UserUsecase) CreateUser(ctx context.Context, g *User) (*User, error) {
-	uc.log.WithContext(ctx).Infof("CreateUser: %v", g)
+func (uc *UserUsecase) CreateUser(ctx context.Context, g *v1.CreateUserRequest) (*v1.User, error) {
+	uc.log.WithContext(ctx).Infof("CreateUser: %s", g.Email)
 	return uc.repo.CreateUser(ctx, g)
 }
