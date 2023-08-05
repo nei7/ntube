@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/go-kratos/kratos/v2/log"
+	uuid "github.com/nei7/ntube/pkg/util"
 )
 
 type userRepo struct {
@@ -24,6 +25,7 @@ func NewUserRepo(data *Data, logger log.Logger) biz.UserRepo {
 }
 
 func (r *userRepo) CreateUser(ctx context.Context, g *v1.CreateUserRequest) (*v1.User, error) {
+
 	hashedPassword, err := util.HashPassword(g.Password)
 	if err != nil {
 		return nil, err
@@ -42,7 +44,7 @@ func (r *userRepo) CreateUser(ctx context.Context, g *v1.CreateUserRequest) (*v1
 	return &v1.User{
 		Email:     user.Email,
 		Username:  user.Username,
-		Id:        user.ID.String(),
+		Id:        uuid.UUIDToString(user.ID),
 		CreatedAt: timestamppb.New(user.CreatedAt.Time),
 	}, nil
 }

@@ -7,7 +7,7 @@ sql:
       go:
         package: "data"
         out: "app/user/internal/data"
-        sql_package: pgx/v4
+        sql_package: "pgx/v5"
         emit_json_tags: false
         emit_db_tags: false
         emit_prepared_queries: false

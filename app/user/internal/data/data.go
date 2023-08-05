@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
 	"github.com/nei7/ntube/app/user/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -20,7 +20,7 @@ type Data struct {
 	log *log.Helper
 }
 
-func NewPgxPool(config *conf.Data_Database) (*pgxpool.Pool, error) {
+func NewPgxPool(config *conf.Data_Database) (*pgx.Conn, error) {
 	dsn := url.URL{
 		Scheme: "postgres",
 		User:   url.UserPassword(config.Username, config.Password),
@@ -28,10 +28,10 @@ func NewPgxPool(config *conf.Data_Database) (*pgxpool.Pool, error) {
 		Path:   config.Name,
 	}
 
-	return pgxpool.Connect(context.Background(), dsn.String())
+	return pgx.Connect(context.Background(), dsn.String())
 }
 
-func NewData(q *pgxpool.Pool, logger log.Logger) (*Data, func(), error) {
+func NewData(q *pgx.Conn, logger log.Logger) (*Data, func(), error) {
 	log := log.NewHelper(log.With(logger, "module", "user/data"))
 	d := &Data{
 		q:   New(q),
@@ -39,7 +39,7 @@ func NewData(q *pgxpool.Pool, logger log.Logger) (*Data, func(), error) {
 	}
 
 	cleanup := func() {
-		q.Close()
+		q.Close(context.Background())
 		log.Info("closing data resources")
 	}
 

@@ -5,6 +5,11 @@ import (
 	"os"
 
 	"github.com/nei7/ntube/app/user/internal/conf"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -21,7 +26,7 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name string
+	Name string = "ntube.user.service"
 	// Version is the version of the compiled software.
 	Version string
 	// flagconf is the config flag.
@@ -77,7 +82,17 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(bc.Trace.Endpoint)))
+	if err != nil {
+		panic(err)
+	}
+	tp := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(exp),
+		tracesdk.WithResource(resource.NewSchemaless(
+			semconv.ServiceNameKey.String(Name),
+		)),
+	)
+	app, cleanup, err := wireApp(bc.Server, bc.Data, logger, tp)
 	if err != nil {
 		panic(err)
 	}

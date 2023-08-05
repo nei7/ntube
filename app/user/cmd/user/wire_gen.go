@@ -12,15 +12,17 @@ import (
 	"github.com/nei7/ntube/app/user/internal/data"
 	"github.com/nei7/ntube/app/user/internal/server"
 	"github.com/nei7/ntube/app/user/internal/service"
+	"go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/log"	
+
 )
 
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, tp *trace.TracerProvider) (*kratos.App, func(), error) {
 
 	pool, err := data.NewPgxPool(confData.Database)
 	if err != nil {
@@ -34,8 +36,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	greeterRepo := data.NewUserRepo(dataData, logger)
 	greeterUsecase := biz.NewUserUsecase(greeterRepo, logger)
 	greeterService := service.NewGreeterService(greeterUsecase)
-	grpcServer := server.NewGRPCServer(confServer, greeterService, logger)
-	httpServer := server.NewHTTPServer(confServer, greeterService, logger)
+	grpcServer := server.NewGRPCServer(confServer, greeterService, logger,tp)
+	httpServer := server.NewHTTPServer(confServer, greeterService, logger,tp)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

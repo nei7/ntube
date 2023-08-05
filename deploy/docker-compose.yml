@@ -15,7 +15,6 @@ services:
   pgadmin:
     container_name: pgadmin4_container
     image: dpage/pgadmin4
-    restart: always
     networks:
       - backend
     environment:
