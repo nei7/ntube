@@ -11,7 +11,7 @@ ifeq ($(GOHOSTOS), windows)
 	INTERNAL_PROTO_FILES=$(shell $(Git_Bash) -c "find internal -name *.proto")
 	API_PROTO_FILES=$(shell $(Git_Bash) -c "find api -name *.proto")
 else
-	INTERNAL_PROTO_FILES=$(shell find app -name "*.proto")
+	INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
 	API_PROTO_FILES=$(shell find api -name *.proto)
 endif
 
@@ -28,10 +28,10 @@ init:
 .PHONY: config
 # generate internal proto
 config:
-	for dir in app/*/internal ; do \
-			protoc --proto_path=$$dir --proto_path=./third_party --go_out=paths=source_relative:$$dir $$dir/conf/conf.proto ; \
-	done
-	
+	protoc --proto_path=./internal \
+	       --proto_path=./third_party \
+ 	       --go_out=paths=source_relative:./internal \
+	       $(INTERNAL_PROTO_FILES)
 
 .PHONY: api
 # generate api proto
@@ -81,12 +81,3 @@ help:
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 .DEFAULT_GOAL := help
-
-.PHONY: sqlc
-sqlc:
-	sqlc generate
-
-
-.PHONY: migrate
-migrate:
-	migrate -path migration -database "postgresql://root:password@localhost:5432/ntube?sslmode=disable" -verbose up

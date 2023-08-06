@@ -6,14 +6,14 @@ import (
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/nei7/ntube/app/user/internal/conf"
+	"github.com/nei7/ntube/app/2fa/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewUserRepo, NewPgxPool)
+var ProviderSet = wire.NewSet(NewData, NewEmailVerifyRepo, NewPgxPool)
 
 type Data struct {
 	q   *Queries

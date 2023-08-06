@@ -4,21 +4,14 @@ import (
 	"flag"
 	"os"
 
-	"github.com/nei7/ntube/app/user/internal/conf"
-	"go.opentelemetry.io/otel/exporters/jaeger"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-
-	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"github.com/nei7/ntube/app/2fa/internal/conf"
+	"github.com/tx7do/kratos-transport/transport/kafka"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
-	"github.com/go-kratos/kratos/v2/config/env"
 	"github.com/go-kratos/kratos/v2/config/file"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
-	"github.com/go-kratos/kratos/v2/transport/http"
 
 	_ "go.uber.org/automaxprocs"
 )
@@ -26,7 +19,7 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name string = "ntube.user.service"
+	Name string = "ntube.2fa.service"
 	// Version is the version of the compiled software.
 	Version string
 	// flagconf is the config flag.
@@ -39,7 +32,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
+func newApp(logger log.Logger, kf *kafka.Server) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -47,8 +40,7 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
 		kratos.Server(
-			gs,
-			hs,
+			kf,
 		),
 	)
 }
@@ -66,11 +58,9 @@ func main() {
 	)
 	c := config.New(
 		config.WithSource(
-			env.NewSource(""),
 			file.NewSource(flagconf),
 		),
 	)
-
 	defer c.Close()
 
 	if err := c.Load(); err != nil {
@@ -82,17 +72,7 @@ func main() {
 		panic(err)
 	}
 
-	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(bc.Trace.Endpoint)))
-	if err != nil {
-		panic(err)
-	}
-	tp := tracesdk.NewTracerProvider(
-		tracesdk.WithBatcher(exp),
-		tracesdk.WithResource(resource.NewSchemaless(
-			semconv.ServiceNameKey.String(Name),
-		)),
-	)
-	app, cleanup, err := wireApp(bc.Server, bc.Data.Database, logger, tp)
+	app, cleanup, err := wireApp(bc.Server, bc.Data.Database, logger)
 	if err != nil {
 		panic(err)
 	}

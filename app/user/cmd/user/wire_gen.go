@@ -7,37 +7,42 @@
 package main
 
 import (
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/nei7/ntube/app/user/internal/biz"
 	"github.com/nei7/ntube/app/user/internal/conf"
 	"github.com/nei7/ntube/app/user/internal/data"
 	"github.com/nei7/ntube/app/user/internal/server"
 	"github.com/nei7/ntube/app/user/internal/service"
 	"go.opentelemetry.io/otel/sdk/trace"
+)
 
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/log"	
-
+import (
+	_ "go.uber.org/automaxprocs"
 )
 
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, tp *trace.TracerProvider) (*kratos.App, func(), error) {
-
-	pool, err := data.NewPgxPool(confData.Database)
+func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, logger log.Logger, tracerProvider *trace.TracerProvider) (*kratos.App, func(), error) {
+	conn, err := data.NewPgxPool(data_Database)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	dataData, cleanup, err := data.NewData(pool, logger)
+	dataData, cleanup, err := data.NewData(conn, logger)
 	if err != nil {
 		return nil, nil, err
 	}
-	greeterRepo := data.NewUserRepo(dataData, logger)
-	greeterUsecase := biz.NewUserUsecase(greeterRepo, logger)
-	greeterService := service.NewGreeterService(greeterUsecase)
-	grpcServer := server.NewGRPCServer(confServer, greeterService, logger,tp)
-	httpServer := server.NewHTTPServer(confServer, greeterService, logger,tp)
+	userRepo := data.NewUserRepo(dataData, logger)
+	userUsecase := biz.NewUserUsecase(userRepo, logger)
+	writer, err := service.NewKafkaSender(confServer)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	userService := service.NewUserService(userUsecase, writer)
+	grpcServer := server.NewGRPCServer(confServer, userService, logger, tracerProvider)
+	httpServer := server.NewHTTPServer(confServer, userService, logger, tracerProvider)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()
