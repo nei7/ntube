@@ -53,7 +53,7 @@ func (s *UserService) CreateUser(ctx context.Context, in *v1.CreateUserRequest) 
 		UserId: user.Id,
 		Email:  user.Email,
 	}); err == nil {
-		_ = s.kw.WriteMessages(ctx, kafka.Message{
+		s.kw.WriteMessages(ctx, kafka.Message{
 			Value: b,
 		})
 

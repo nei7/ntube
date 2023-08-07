@@ -8,15 +8,15 @@ import (
 	"github.com/tx7do/kratos-transport/broker"
 )
 
-type EmailVerfifyService struct {
+type EmailVerifyService struct {
 	uc *biz.EmailVerifyUsecase
 }
 
-func NewEmailVerfifyService(uc *biz.EmailVerifyUsecase) *EmailVerfifyService {
-	return &EmailVerfifyService{uc: uc}
+func NewEmailVerifyService(uc *biz.EmailVerifyUsecase) *EmailVerifyService {
+	return &EmailVerifyService{uc: uc}
 }
 
-func (s *EmailVerfifyService) VerifyEmail(ctx context.Context, topic string, headers broker.Headers, msg *v1.EmailVerifyRequest) error {
+func (s *EmailVerifyService) VerifyEmail(ctx context.Context, topic string, headers broker.Headers, msg *v1.EmailVerifyRequest) error {
 
 	_, err := s.uc.CreateVerifyEmail(ctx, msg)
 

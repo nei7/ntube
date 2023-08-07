@@ -34,8 +34,8 @@ func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, logger 
 	}
 	emailVerifyRepo := data.NewEmailVerifyRepo(dataData, logger)
 	emailVerifyUsecase := biz.NewEmailVerifyUsecase(emailVerifyRepo, logger)
-	emailVerfifyService := service.NewEmailVerfifyService(emailVerifyUsecase)
-	kafkaServer := server.NewKafkaServer(confServer, logger, emailVerfifyService)
+	emailVerifyService := service.NewEmailVerifyService(emailVerifyUsecase)
+	kafkaServer := server.NewKafkaServer(confServer, logger, emailVerifyService)
 	app := newApp(logger, kafkaServer)
 	return app, func() {
 		cleanup()

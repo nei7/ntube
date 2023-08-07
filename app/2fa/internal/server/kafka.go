@@ -16,7 +16,7 @@ import (
 
 func EmailVerifyCreator() broker.Any { return &v1.EmailVerifyRequest{} }
 
-func NewKafkaServer(c *conf.Server, _ log.Logger, svc *service.EmailVerfifyService) *kafka.Server {
+func NewKafkaServer(c *conf.Server, _ log.Logger, svc *service.EmailVerifyService) *kafka.Server {
 	ctx := context.Background()
 
 	srv := kafka.NewServer(
@@ -35,9 +35,9 @@ func NewKafkaServer(c *conf.Server, _ log.Logger, svc *service.EmailVerfifyServi
 	return srv
 }
 
-type EmaiVerifylHandler func(ctx context.Context, topic string, headers broker.Headers, msg *v1.EmailVerifyRequest) error
+type EmaiVerifyHandler func(ctx context.Context, topic string, headers broker.Headers, msg *v1.EmailVerifyRequest) error
 
-func RegisterEmailVerifyHandler(fnc EmaiVerifylHandler) broker.Handler {
+func RegisterEmailVerifyHandler(fnc EmaiVerifyHandler) broker.Handler {
 	return func(ctx context.Context, e broker.Event) error {
 		var msg *v1.EmailVerifyRequest = nil
 
