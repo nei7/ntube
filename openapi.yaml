@@ -3,9 +3,31 @@
 
 openapi: 3.0.3
 info:
-    title: UserService API
+    title: ""
     version: 0.0.1
 paths:
+    v1/email/verify:
+        get:
+            tags:
+                - AuthSercie
+            operationId: AuthSercie_VerifyEmail
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: integer
+                    format: int64
+                - name: secretCode
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/v1.VerifyEmailResponse'
     v1/user:
         post:
             tags:
@@ -51,5 +73,11 @@ components:
                 createdAt:
                     type: string
                     format: date-time
+        v1.VerifyEmailResponse:
+            type: object
+            properties:
+                isVerified:
+                    type: boolean
 tags:
+    - name: AuthSercie
     - name: UserService

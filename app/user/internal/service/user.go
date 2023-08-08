@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/segmentio/kafka-go"
 
-	email "github.com/nei7/ntube/api/email/v1"
+	email "github.com/nei7/ntube/api/2fa/v1"
 	v1 "github.com/nei7/ntube/api/user/v1"
 	"github.com/nei7/ntube/app/user/internal/biz"
 	"github.com/nei7/ntube/app/user/internal/conf"
@@ -49,7 +49,7 @@ func (s *UserService) CreateUser(ctx context.Context, in *v1.CreateUserRequest) 
 		return nil, err
 	}
 
-	if b, err := json.Marshal(email.EmailVerifyRequest{
+	if b, err := json.Marshal(email.SendEmailRequest{
 		UserId: user.Id,
 		Email:  user.Email,
 	}); err == nil {

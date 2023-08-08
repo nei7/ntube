@@ -1,25 +1,32 @@
 package biz
 
 import (
-	"context"
+	"net/smtp"
 
-	"github.com/go-kratos/kratos/v2/log"
-	v1 "github.com/nei7/ntube/api/email/v1"
+	"github.com/jordan-wright/email"
+	"github.com/nei7/ntube/app/2fa/internal/conf"
 )
 
-type EmailVerifyRepo interface {
-	CreateVerifyEmail(context.Context, *v1.EmailVerifyRequest) (*v1.EmailVerify, error)
+type EmailSenderUsecase struct {
+	password string
+	address  string
+	name     string
 }
 
-type EmailVerifyUsecase struct {
-	repo EmailVerifyRepo
-	log  *log.Helper
+func NewEmailSenderUsecase(config *conf.Email) *EmailSenderUsecase {
+	return &EmailSenderUsecase{
+		name:     "nei",
+		password: config.Password,
+		address:  config.Address,
+	}
 }
 
-func NewEmailVerifyUsecase(repo EmailVerifyRepo, logger log.Logger) *EmailVerifyUsecase {
-	return &EmailVerifyUsecase{repo: repo, log: log.NewHelper(logger)}
-}
-
-func (uc *EmailVerifyUsecase) CreateVerifyEmail(ctx context.Context, g *v1.EmailVerifyRequest) (*v1.EmailVerify, error) {
-	return uc.repo.CreateVerifyEmail(ctx, g)
+func (uc *EmailSenderUsecase) SendEmail(subject string, content string, to []string) error {
+	auth := smtp.PlainAuth("", uc.address, uc.password, "smtp.gmail.com")
+	e := email.NewEmail()
+	e.From = uc.address
+	e.Subject = subject
+	e.To = to
+	e.HTML = []byte(content)
+	return e.Send("smtp.gmail.com:587", auth)
 }

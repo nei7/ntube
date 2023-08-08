@@ -3,9 +3,11 @@ module github.com/nei7/ntube
 go 1.18
 
 require (
+	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/go-kratos/kratos/v2 v2.6.3
 	github.com/google/wire v0.5.0
 	github.com/jackc/pgx/v5 v5.4.3
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/segmentio/kafka-go v0.4.40
 	github.com/tx7do/kratos-transport v1.0.7
 	github.com/tx7do/kratos-transport/transport/kafka v0.0.0-20230705091649-098eb7fa69bb
@@ -13,7 +15,7 @@ require (
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.uber.org/automaxprocs v1.5.1
-	golang.org/x/crypto v0.9.0
+	golang.org/x/crypto v0.12.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc
 	google.golang.org/grpc v1.56.1
 	google.golang.org/protobuf v1.31.0
@@ -45,10 +47,10 @@ require (
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20230530153820-e85fd2cbaebc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230629202037-9506855d4529 // indirect

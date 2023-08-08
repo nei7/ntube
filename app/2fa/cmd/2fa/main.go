@@ -12,7 +12,12 @@ import (
 	"github.com/go-kratos/kratos/v2/config/file"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
+	"github.com/go-kratos/kratos/v2/transport/http"
 
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	_ "go.uber.org/automaxprocs"
 )
 
@@ -32,7 +37,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func newApp(logger log.Logger, kf *kafka.Server) *kratos.App {
+func newApp(logger log.Logger, kf *kafka.Server, hs *http.Server) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
@@ -40,7 +45,7 @@ func newApp(logger log.Logger, kf *kafka.Server) *kratos.App {
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
 		kratos.Server(
-			kf,
+			kf, hs,
 		),
 	)
 }
@@ -71,8 +76,18 @@ func main() {
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
 	}
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(bc.Trace.Endpoint)))
+	if err != nil {
+		panic(err)
+	}
+	tp := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(exp),
+		tracesdk.WithResource(resource.NewSchemaless(
+			semconv.ServiceNameKey.String(Name),
+		)),
+	)
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data.Database, logger)
+	app, cleanup, err := wireApp(bc.Server, bc.Data.Database, bc.Email, logger, tp)
 	if err != nil {
 		panic(err)
 	}

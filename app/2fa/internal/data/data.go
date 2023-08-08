@@ -16,8 +16,9 @@ import (
 var ProviderSet = wire.NewSet(NewData, NewEmailVerifyRepo, NewPgxPool)
 
 type Data struct {
-	q   *Queries
-	log *log.Helper
+	*Queries
+	conn *pgx.Conn
+	log  *log.Helper
 }
 
 func NewPgxPool(config *conf.Data_Database) (*pgx.Conn, error) {
@@ -31,15 +32,16 @@ func NewPgxPool(config *conf.Data_Database) (*pgx.Conn, error) {
 	return pgx.Connect(context.Background(), dsn.String())
 }
 
-func NewData(q *pgx.Conn, logger log.Logger) (*Data, func(), error) {
-	log := log.NewHelper(log.With(logger, "module", "user/data"))
+func NewData(c *pgx.Conn, logger log.Logger) (*Data, func(), error) {
+	log := log.NewHelper(log.With(logger, "module", "email_verify/data"))
 	d := &Data{
-		q:   New(q),
-		log: log,
+		Queries: New(c),
+		conn:    c,
+		log:     log,
 	}
 
 	cleanup := func() {
-		q.Close(context.Background())
+		c.Close(context.Background())
 		log.Info("closing data resources")
 	}
 

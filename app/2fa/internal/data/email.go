@@ -2,11 +2,13 @@ package data
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/aidarkhanov/nanoid"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-
-	v1 "github.com/nei7/ntube/api/email/v1"
+	v1 "github.com/nei7/ntube/api/2fa/v1"
 	"github.com/nei7/ntube/app/2fa/internal/biz"
 )
 
@@ -15,28 +17,77 @@ type emailVerifyRepo struct {
 	log  *log.Helper
 }
 
-func NewEmailVerifyRepo(data *Data, logger log.Logger) biz.EmailVerifyRepo {
+func NewEmailVerifyRepo(data *Data, logger log.Logger) biz.AuthRepo {
 	return &emailVerifyRepo{
 		data: data,
 		log:  log.NewHelper(logger),
 	}
 }
 
-func (r *emailVerifyRepo) CreateVerifyEmail(ctx context.Context, req *v1.EmailVerifyRequest) (*v1.EmailVerify, error) {
+func (r *emailVerifyRepo) CreateVerifyEmail(ctx context.Context, req *v1.SendEmailRequest) (*v1.EmailVerify, error) {
 	var userId pgtype.UUID
 
 	userId.Scan(req.UserId)
 
-	email, err := r.data.q.CreateVerifyEmail(ctx, CreateVerifyEmailParams{
+	email, err := r.data.CreateVerifyEmail(ctx, CreateVerifyEmailParams{
 		Email:      req.Email,
 		UserID:     userId,
-		SecretCode: "123",
+		SecretCode: nanoid.New(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &v1.EmailVerify{
-		Id: email.ID,
+		Id:         email.ID,
+		SecretCode: email.SecretCode,
 	}, nil
+}
+
+func (r *emailVerifyRepo) VerifyEmail(ctx context.Context, req *v1.VerifyEmailRequest) (*v1.VerifyEmailResponse, error) {
+
+	err := ExecTX(ctx, r.data.conn, func(q *Queries) error {
+		result, err := r.data.UpdateVerifyEmail(ctx, UpdateVerifyEmailParams{
+			ID:         req.Id,
+			SecretCode: req.SecretCode,
+		})
+		if err != nil {
+			return nil
+		}
+
+		_, err = r.data.UpdateUser(ctx, UpdateUserParams{
+			ID:              result.UserID,
+			IsEmailVerified: true,
+		})
+		if err != nil {
+			return nil
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.VerifyEmailResponse{
+		IsVerified: true,
+	}, nil
+}
+
+func ExecTX(ctx context.Context, conn *pgx.Conn, fn func(q *Queries) error) error {
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	q := New(conn)
+	err = fn(q)
+
+	if err != nil {
+		if rbErr := tx.Rollback(ctx); rbErr != nil {
+			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return err
+	}
+
+	return tx.Commit(ctx)
 }

@@ -1,12 +1,14 @@
 syntax = "proto3";
 package kratos.api;
 
+import "google/protobuf/duration.proto";
 option go_package = "github.com/nei7/ntube/app/user/internal/conf;conf";
 
 message Bootstrap {
   Server server = 1;
   Data data = 2;
   Trace trace = 3;
+  Email email = 4;
 }
 
 message Server {
@@ -14,8 +16,15 @@ message Server {
   message Kafka {
     string addr = 1;
   }
+  message HTTP {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+  }
 
-  Kafka kafka = 3;
+
+  Kafka kafka = 1;
+  HTTP http = 2;
 }
 
 message Trace {
@@ -32,4 +41,9 @@ message Data {
   }
 
   Database database = 1;
+}
+
+message Email {
+  string address = 1;
+  string password = 2;
 }

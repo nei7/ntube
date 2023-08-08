@@ -13,7 +13,7 @@ service UserService {
 		option (google.api.http) = {
 			post: "v1/user"
 			body: "*"
-		  };
+		};
 	}
 
 	rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdReply);

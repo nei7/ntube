@@ -14,6 +14,7 @@ import (
 	"github.com/nei7/ntube/app/2fa/internal/data"
 	"github.com/nei7/ntube/app/2fa/internal/server"
 	"github.com/nei7/ntube/app/2fa/internal/service"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 import (
@@ -23,7 +24,7 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, logger log.Logger) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, email *conf.Email, logger log.Logger, tracerProvider *trace.TracerProvider) (*kratos.App, func(), error) {
 	conn, err := data.NewPgxPool(data_Database)
 	if err != nil {
 		return nil, nil, err
@@ -32,11 +33,14 @@ func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, logger 
 	if err != nil {
 		return nil, nil, err
 	}
-	emailVerifyRepo := data.NewEmailVerifyRepo(dataData, logger)
-	emailVerifyUsecase := biz.NewEmailVerifyUsecase(emailVerifyRepo, logger)
-	emailVerifyService := service.NewEmailVerifyService(emailVerifyUsecase)
-	kafkaServer := server.NewKafkaServer(confServer, logger, emailVerifyService)
-	app := newApp(logger, kafkaServer)
+	authRepo := data.NewEmailVerifyRepo(dataData, logger)
+	authUsecase := biz.NewAuthUsecase(authRepo, logger)
+	emailSenderUsecase := biz.NewEmailSenderUsecase(email)
+	emailJobService := service.NewEmailJobService(authUsecase, emailSenderUsecase)
+	kafkaServer := server.NewKafkaServer(confServer, logger, emailJobService, tracerProvider)
+	authService := service.NewAuthService(authUsecase)
+	httpServer := server.NewHTTPServer(confServer, authService, logger, tracerProvider)
+	app := newApp(logger, kafkaServer, httpServer)
 	return app, func() {
 		cleanup()
 	}, nil

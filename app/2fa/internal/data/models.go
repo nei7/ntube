@@ -9,14 +9,15 @@ import (
 )
 
 type User struct {
-	ID              pgtype.UUID
-	Username        string
-	Email           string
-	Password        string
-	Description     pgtype.Text
-	Avatar          pgtype.Text
-	CreatedAt       pgtype.Timestamp
-	IsEmailVerified bool
+	ID                pgtype.UUID
+	Username          string
+	Email             string
+	Password          string
+	Description       pgtype.Text
+	Avatar            pgtype.Text
+	CreatedAt         pgtype.Timestamp
+	IsEmailVerified   bool
+	PasswordChangedAt pgtype.Timestamptz
 }
 
 type VerifyEmail struct {

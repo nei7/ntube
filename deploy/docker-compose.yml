@@ -73,6 +73,7 @@ services:
     ports:
       - "2181:2181"
   kafka:
+    restart: always
     image: bitnami/kafka:latest
     ports:
       - "9092:9092"
