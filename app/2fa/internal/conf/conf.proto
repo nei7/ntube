@@ -46,4 +46,5 @@ message Data {
 message Email {
   string address = 1;
   string password = 2;
+  string host = 3;
 }

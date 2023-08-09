@@ -1,13 +1,21 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"text/template"
 
 	v1 "github.com/nei7/ntube/api/2fa/v1"
 	"github.com/nei7/ntube/app/2fa/internal/biz"
 	"github.com/tx7do/kratos-transport/broker"
 )
+
+var temp *template.Template
+
+func init() {
+	temp, _ = template.ParseFiles("./email.tmpl")
+}
 
 type EmailJobService struct {
 	authData    *biz.AuthUsecase
@@ -25,5 +33,17 @@ func (s *EmailJobService) SendVerifyEmail(ctx context.Context, topic string, hea
 		return err
 	}
 
-	return s.emailSender.SendEmail("Verify email", fmt.Sprintf("http://localhost:8001/v1/email/verify?id=%d&secret_code=%s", data.Id, data.SecretCode), []string{msg.Email})
+	buf := new(bytes.Buffer)
+
+	err = temp.Execute(buf, struct {
+		Link       string
+		SecretCode string
+		ExpiredAt  string
+	}{
+		Link:       fmt.Sprintf("http://localhost:8001/v1/email/verify?id=%d&secret_code=%s", data.Id, data.SecretCode),
+		ExpiredAt:  data.ExpiredAt.String(),
+		SecretCode: data.SecretCode,
+	})
+
+	return s.emailSender.SendEmail("Verify email", buf.Bytes(), []string{msg.Email})
 }

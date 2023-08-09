@@ -73,8 +73,10 @@ services:
     ports:
       - "2181:2181"
   kafka:
-    restart: always
     image: bitnami/kafka:latest
+    depends_on:
+      - zookeeper
+    restart: on-failure
     ports:
       - "9092:9092"
     hostname: kafka

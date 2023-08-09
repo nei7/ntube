@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"fmt"
 	"net/smtp"
 
 	"github.com/jordan-wright/email"
@@ -10,23 +11,23 @@ import (
 type EmailSenderUsecase struct {
 	password string
 	address  string
-	name     string
+	host     string
 }
 
 func NewEmailSenderUsecase(config *conf.Email) *EmailSenderUsecase {
 	return &EmailSenderUsecase{
-		name:     "nei",
+		host:     config.Host,
 		password: config.Password,
 		address:  config.Address,
 	}
 }
 
-func (uc *EmailSenderUsecase) SendEmail(subject string, content string, to []string) error {
-	auth := smtp.PlainAuth("", uc.address, uc.password, "smtp.gmail.com")
+func (uc *EmailSenderUsecase) SendEmail(subject string, content []byte, to []string) error {
+	auth := smtp.PlainAuth("", uc.address, uc.password, uc.host)
 	e := email.NewEmail()
 	e.From = uc.address
 	e.Subject = subject
 	e.To = to
-	e.HTML = []byte(content)
-	return e.Send("smtp.gmail.com:587", auth)
+	e.HTML = content
+	return e.Send(fmt.Sprintf("%s:%d", uc.host, 587), auth)
 }

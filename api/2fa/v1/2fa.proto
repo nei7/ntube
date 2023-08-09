@@ -3,6 +3,7 @@ syntax = "proto3";
 package v1;
 
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "api/2fa/v1;v1";
 
@@ -30,6 +31,8 @@ message EmailVerify {
     string email = 3;
     string secret_code = 4;
     bool is_used = 5;
+    google.protobuf.Timestamp expired_at = 6;
+
 }
 
 
