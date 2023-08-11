@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
-	v1 "github.com/nei7/ntube/api/2fa/v1"
+	v1 "github.com/nei7/ntube/api/auth/v1"
 )
 
 type AuthRepo interface {

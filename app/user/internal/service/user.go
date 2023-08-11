@@ -5,13 +5,15 @@ import (
 	"encoding/json"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/segmentio/kafka-go"
 
-	email "github.com/nei7/ntube/api/2fa/v1"
+	email "github.com/nei7/ntube/api/auth/v1"
 	v1 "github.com/nei7/ntube/api/user/v1"
 	"github.com/nei7/ntube/app/user/internal/biz"
 	"github.com/nei7/ntube/app/user/internal/conf"
+	"github.com/nei7/ntube/app/user/util"
 )
 
 // GreeterService is a greeter service.
@@ -60,4 +62,22 @@ func (s *UserService) CreateUser(ctx context.Context, in *v1.CreateUserRequest) 
 	}
 
 	return user, nil
+}
+
+func (s *UserService) VerifyPassword(ctx context.Context, r *v1.VerifyPasswordRequest) (*v1.VerifyPasswordReply, error) {
+	user, err := s.uc.GetUserByEmail(ctx, &v1.GetUserByEmailRequest{
+		Email: r.Email,
+	})
+	if err != nil {
+		if errors.Is(pgx.ErrNoRows, err) {
+			return nil, errors.BadRequest(v1.UserServiceErrorReason_USER_NOT_FOUND.String(), "User doesn't exist")
+		}
+		return nil, err
+	}
+
+	if !util.CheckPasswordHash(r.Password, user.Password) {
+		return nil, errors.Unauthorized(v1.UserServiceErrorReason_INVALID_PASSWORD.String(), "Invalid password")
+	}
+
+	return nil, nil
 }

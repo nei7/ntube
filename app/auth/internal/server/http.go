@@ -1,9 +1,9 @@
 package server
 
 import (
-	v1 "github.com/nei7/ntube/api/2fa/v1"
-	"github.com/nei7/ntube/app/2fa/internal/conf"
-	"github.com/nei7/ntube/app/2fa/internal/service"
+	v1 "github.com/nei7/ntube/api/auth/v1"
+	"github.com/nei7/ntube/app/auth/internal/conf"
+	"github.com/nei7/ntube/app/auth/internal/service"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/go-kratos/kratos/v2/log"

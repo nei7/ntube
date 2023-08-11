@@ -5,7 +5,7 @@ import (
 	"net/smtp"
 
 	"github.com/jordan-wright/email"
-	"github.com/nei7/ntube/app/2fa/internal/conf"
+	"github.com/nei7/ntube/app/auth/internal/conf"
 )
 
 type EmailSenderUsecase struct {

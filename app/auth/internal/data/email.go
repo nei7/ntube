@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/aidarkhanov/nanoid"
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	v1 "github.com/nei7/ntube/api/2fa/v1"
-	"github.com/nei7/ntube/app/2fa/internal/biz"
+	v1 "github.com/nei7/ntube/api/auth/v1"
+	"github.com/nei7/ntube/app/auth/internal/biz"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type emailVerifyRepo struct {
@@ -40,19 +42,23 @@ func (r *emailVerifyRepo) CreateVerifyEmail(ctx context.Context, req *v1.SendEma
 
 	return &v1.EmailVerify{
 		Id:         email.ID,
+		ExpiredAt:  timestamppb.New(email.ExpiredAt.Time),
 		SecretCode: email.SecretCode,
 	}, nil
 }
 
 func (r *emailVerifyRepo) VerifyEmail(ctx context.Context, req *v1.VerifyEmailRequest) (*v1.VerifyEmailResponse, error) {
-
 	err := ExecTX(ctx, r.data.conn, func(q *Queries) error {
 		result, err := r.data.UpdateVerifyEmail(ctx, UpdateVerifyEmailParams{
 			ID:         req.Id,
 			SecretCode: req.SecretCode,
 		})
+
 		if err != nil {
-			return nil
+			if errors.Is(pgx.ErrNoRows, err) {
+				return errors.BadRequest(v1.AuthServiceErrorReason_EXPIRED_OR_DOESNT_EXISTS.String(), "Link expired or doesn't exists")
+			}
+			return err
 		}
 
 		_, err = r.data.UpdateUser(ctx, UpdateUserParams{
@@ -62,7 +68,6 @@ func (r *emailVerifyRepo) VerifyEmail(ctx context.Context, req *v1.VerifyEmailRe
 		if err != nil {
 			return nil
 		}
-
 		return nil
 	})
 	if err != nil {

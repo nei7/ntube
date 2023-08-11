@@ -12,7 +12,6 @@ message Bootstrap {
 }
 
 message Server {
-
   message Kafka {
     string addr = 1;
   }
@@ -22,9 +21,9 @@ message Server {
     google.protobuf.Duration timeout = 3;
   }
 
-
   Kafka kafka = 1;
   HTTP http = 2;
+  string url = 3;
 }
 
 message Trace {

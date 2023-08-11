@@ -5,7 +5,7 @@ package v1;
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "api/2fa/v1;v1";
+option go_package = "api/auth/v1;v1";
 
 
 service AuthSercie {

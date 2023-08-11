@@ -16,6 +16,8 @@ var (
 
 type UserRepo interface {
 	CreateUser(context.Context, *v1.CreateUserRequest) (*v1.User, error)
+	GetUserById(context.Context, *v1.GetUserByIdRequest) (*v1.User, error)
+	GetUserByEmail(context.Context, *v1.GetUserByEmailRequest) (*v1.GetUserByEmailReply, error)
 }
 
 type UserUsecase struct {
@@ -23,13 +25,16 @@ type UserUsecase struct {
 	log  *log.Helper
 }
 
-// NewGreeterUsecase new a Greeter usecase.
 func NewUserUsecase(repo UserRepo, logger log.Logger) *UserUsecase {
 	return &UserUsecase{repo: repo, log: log.NewHelper(logger)}
 }
 
-// CreateGreeter creates a Greeter, and returns the new Greeter.
-func (uc *UserUsecase) CreateUser(ctx context.Context, g *v1.CreateUserRequest) (*v1.User, error) {
-	uc.log.WithContext(ctx).Infof("CreateUser: %s", g.Email)
-	return uc.repo.CreateUser(ctx, g)
+func (uc *UserUsecase) CreateUser(ctx context.Context, r *v1.CreateUserRequest) (*v1.User, error) {
+	uc.log.WithContext(ctx).Infof("CreateUser: %s", r.Email)
+	return uc.repo.CreateUser(ctx, r)
+}
+
+func (uc *UserUsecase) GetUserByEmail(ctx context.Context, r *v1.GetUserByEmailRequest) (*v1.GetUserByEmailReply, error) {
+	uc.log.WithContext(ctx).Infof("GetUserByEmail: %s", r.Email)
+	return uc.repo.GetUserByEmail(ctx, r)
 }

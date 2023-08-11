@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"text/template"
 
-	v1 "github.com/nei7/ntube/api/2fa/v1"
-	"github.com/nei7/ntube/app/2fa/internal/biz"
+	v1 "github.com/nei7/ntube/api/auth/v1"
+	"github.com/nei7/ntube/app/auth/internal/biz"
+	"github.com/nei7/ntube/app/auth/internal/conf"
 	"github.com/tx7do/kratos-transport/broker"
 )
 
@@ -20,10 +21,11 @@ func init() {
 type EmailJobService struct {
 	authData    *biz.AuthUsecase
 	emailSender *biz.EmailSenderUsecase
+	url         string
 }
 
-func NewEmailJobService(ev *biz.AuthUsecase, es *biz.EmailSenderUsecase) *EmailJobService {
-	return &EmailJobService{authData: ev, emailSender: es}
+func NewEmailJobService(ev *biz.AuthUsecase, es *biz.EmailSenderUsecase, c *conf.Server) *EmailJobService {
+	return &EmailJobService{authData: ev, emailSender: es, url: c.Url}
 }
 
 func (s *EmailJobService) SendVerifyEmail(ctx context.Context, topic string, headers broker.Headers, msg *v1.SendEmailRequest) error {
@@ -36,11 +38,12 @@ func (s *EmailJobService) SendVerifyEmail(ctx context.Context, topic string, hea
 	buf := new(bytes.Buffer)
 
 	err = temp.Execute(buf, struct {
+		Id         string
 		Link       string
 		SecretCode string
 		ExpiredAt  string
 	}{
-		Link:       fmt.Sprintf("http://localhost:8001/v1/email/verify?id=%d&secret_code=%s", data.Id, data.SecretCode),
+		Link:       fmt.Sprintf("email?id=%d&secret_code=%s", data.Id, data.SecretCode),
 		ExpiredAt:  data.ExpiredAt.String(),
 		SecretCode: data.SecretCode,
 	})

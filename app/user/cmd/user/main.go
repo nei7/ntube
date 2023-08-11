@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 
-	"github.com/nei7/ntube/app/user/internal/conf"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 
@@ -13,12 +12,13 @@ import (
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
-	"github.com/go-kratos/kratos/v2/config/env"
 	"github.com/go-kratos/kratos/v2/config/file"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/nei7/ntube/app/user/internal/conf"
+	"github.com/nei7/ntube/pkg/bootstrap"
 
 	_ "go.uber.org/automaxprocs"
 )
@@ -66,7 +66,6 @@ func main() {
 	)
 	c := config.New(
 		config.WithSource(
-			env.NewSource(""),
 			file.NewSource(flagconf),
 		),
 	)
@@ -92,7 +91,13 @@ func main() {
 			semconv.ServiceNameKey.String(Name),
 		)),
 	)
-	app, cleanup, err := wireApp(bc.Server, bc.Data.Database, logger, tp)
+	app, cleanup, err := wireApp(bc.Server, &bootstrap.DBConfig{
+		Name:     bc.Data.Database.Name,
+		Password: bc.Data.Database.Password,
+		Host:     bc.Data.Database.Host,
+		Port:     bc.Data.Database.Port,
+		Username: bc.Data.Database.Username,
+	}, logger, tp)
 	if err != nil {
 		panic(err)
 	}
