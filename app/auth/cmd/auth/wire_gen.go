@@ -14,7 +14,6 @@ import (
 	"github.com/nei7/ntube/app/auth/internal/data"
 	"github.com/nei7/ntube/app/auth/internal/server"
 	"github.com/nei7/ntube/app/auth/internal/service"
-	"github.com/nei7/ntube/pkg/bootstrap"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -25,8 +24,8 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, dbConfig *bootstrap.DBConfig, email *conf.Email, logger log.Logger, tracerProvider *trace.TracerProvider) (*kratos.App, func(), error) {
-	conn, err := bootstrap.NewPgxPool(dbConfig)
+func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, email *conf.Email, logger log.Logger, tracerProvider *trace.TracerProvider) (*kratos.App, func(), error) {
+	conn, err := data.NewPgxPool(data_Database)
 	if err != nil {
 		return nil, nil, err
 	}

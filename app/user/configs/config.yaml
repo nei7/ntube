@@ -16,5 +16,15 @@ data:
     host: localhost
     port: "5432"
 
+  redis:
+    addr: localhost:6379
+    username: ""
+    password: ""
+    db: 0
+
+token:
+  duration: 3600s
+  secret: change_me
+
 trace:
   endpoint: http://127.0.0.1:14268/api/traces

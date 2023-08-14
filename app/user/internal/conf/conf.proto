@@ -9,6 +9,12 @@ message Bootstrap {
   Server server = 1;
   Data data = 2;
   Trace trace = 3;
+  Token token = 4;
+}
+
+message Token {
+  string secret = 1;
+  google.protobuf.Duration duration = 2;
 }
 
 message Server {
@@ -46,5 +52,13 @@ message Data {
     string port = 5;
   }
 
+  message Redis {
+    string addr = 1;
+    int32 db = 2;
+    string password = 3;
+    string username = 4;
+  }
+
   Database database = 1;
+  Redis redis = 2;
 }

@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/nei7/ntube/app/auth/internal/conf"
-	"github.com/nei7/ntube/pkg/bootstrap"
 	"github.com/tx7do/kratos-transport/transport/kafka"
 
 	"github.com/go-kratos/kratos/v2"
@@ -88,13 +87,7 @@ func main() {
 		)),
 	)
 
-	app, cleanup, err := wireApp(bc.Server, &bootstrap.DBConfig{
-		Name:     bc.Data.Database.Name,
-		Password: bc.Data.Database.Password,
-		Host:     bc.Data.Database.Host,
-		Port:     bc.Data.Database.Port,
-		Username: bc.Data.Database.Username,
-	}, bc.Email, logger, tp)
+	app, cleanup, err := wireApp(bc.Server, bc.Data.Database, bc.Email, logger, tp)
 	if err != nil {
 		panic(err)
 	}

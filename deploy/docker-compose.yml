@@ -24,6 +24,14 @@ services:
       - "5050:80"
     logging:
       driver: none
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - '6379:6379'
+
+
   jaeger:
     networks:
       - backend
@@ -102,6 +110,8 @@ services:
     hostname: kibana
     depends_on:
       - elasticsearch
+  
+
 
 networks:
   backend:

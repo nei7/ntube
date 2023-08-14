@@ -18,7 +18,6 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/nei7/ntube/app/user/internal/conf"
-	"github.com/nei7/ntube/pkg/bootstrap"
 
 	_ "go.uber.org/automaxprocs"
 )
@@ -91,13 +90,7 @@ func main() {
 			semconv.ServiceNameKey.String(Name),
 		)),
 	)
-	app, cleanup, err := wireApp(bc.Server, &bootstrap.DBConfig{
-		Name:     bc.Data.Database.Name,
-		Password: bc.Data.Database.Password,
-		Host:     bc.Data.Database.Host,
-		Port:     bc.Data.Database.Port,
-		Username: bc.Data.Database.Username,
-	}, logger, tp)
+	app, cleanup, err := wireApp(bc.Server, bc.Data.Database, bc.Data.Redis, bc.Token, logger, tp)
 	if err != nil {
 		panic(err)
 	}

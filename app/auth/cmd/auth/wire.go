@@ -14,11 +14,10 @@ import (
 	"github.com/nei7/ntube/app/auth/internal/data"
 	"github.com/nei7/ntube/app/auth/internal/server"
 	"github.com/nei7/ntube/app/auth/internal/service"
-	"github.com/nei7/ntube/pkg/bootstrap"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
 
 // wireApp init kratos application.
-func wireApp(*conf.Server, *bootstrap.DBConfig, *conf.Email, log.Logger, *tracesdk.TracerProvider) (*kratos.App, func(), error) {
+func wireApp(*conf.Server, *conf.Data_Database, *conf.Email, log.Logger, *tracesdk.TracerProvider) (*kratos.App, func(), error) {
 	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, newApp))
 }

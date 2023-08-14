@@ -5,13 +5,7 @@ import (
 
 	v1 "github.com/nei7/ntube/api/user/v1"
 
-	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
-)
-
-var (
-	// ErrUserNotFound is user not found.
-	ErrUserNotFound = errors.NotFound(v1.UserServiceErrorReason_USER_NOT_FOUND.String(), "user not found")
 )
 
 type UserRepo interface {

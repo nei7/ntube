@@ -11,7 +11,6 @@ import (
 	"github.com/nei7/ntube/app/user/internal/data"
 	"github.com/nei7/ntube/app/user/internal/server"
 	"github.com/nei7/ntube/app/user/internal/service"
-	"github.com/nei7/ntube/pkg/bootstrap"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
@@ -20,6 +19,6 @@ import (
 )
 
 // wireApp init kratos application.
-func wireApp(*conf.Server, *bootstrap.DBConfig, log.Logger, *tracesdk.TracerProvider) (*kratos.App, func(), error) {
+func wireApp(*conf.Server, *conf.Data_Database, *conf.Data_Redis, *conf.Token, log.Logger, *tracesdk.TracerProvider) (*kratos.App, func(), error) {
 	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, newApp))
 }

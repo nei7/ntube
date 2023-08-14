@@ -14,7 +14,6 @@ import (
 	"github.com/nei7/ntube/app/user/internal/data"
 	"github.com/nei7/ntube/app/user/internal/server"
 	"github.com/nei7/ntube/app/user/internal/service"
-	"github.com/nei7/ntube/pkg/bootstrap"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -25,23 +24,27 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, dbConfig *bootstrap.DBConfig, logger log.Logger, tracerProvider *trace.TracerProvider) (*kratos.App, func(), error) {
-	conn, err := bootstrap.NewPgxPool(dbConfig)
+func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, data_Redis *conf.Data_Redis, token *conf.Token, logger log.Logger, tracerProvider *trace.TracerProvider) (*kratos.App, func(), error) {
+	conn, err := data.NewPgxPool(data_Database)
 	if err != nil {
 		return nil, nil, err
 	}
-	dataData, cleanup, err := data.NewData(conn, logger)
+	cmdable := data.NewRedisClient(data_Redis)
+	dataData, cleanup, err := data.NewData(conn, cmdable, logger)
 	if err != nil {
 		return nil, nil, err
 	}
 	userRepo := data.NewUserRepo(dataData, logger)
 	userUsecase := biz.NewUserUsecase(userRepo, logger)
+	sessionRepo := data.NewSessionRepo(dataData, logger)
+	sessionUsecase := biz.NewSessionUsecase(sessionRepo, logger)
+	tokenUsecase := biz.NewTokenUsecase(token)
 	writer, err := service.NewKafkaSender(confServer)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	userService := service.NewUserService(userUsecase, writer)
+	userService := service.NewUserService(userUsecase, sessionUsecase, tokenUsecase, writer)
 	grpcServer := server.NewGRPCServer(confServer, userService, logger, tracerProvider)
 	httpServer := server.NewHTTPServer(confServer, userService, logger, tracerProvider)
 	app := newApp(logger, grpcServer, httpServer)

@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/segmentio/kafka-go"
@@ -20,7 +22,9 @@ import (
 type UserService struct {
 	v1.UnimplementedUserServiceServer
 
-	uc *biz.UserUsecase
+	uc             *biz.UserUsecase
+	sessionUsecase *biz.SessionUsecase
+	tokenUsecase   *biz.TokenUsecase
 
 	kw *kafka.Writer
 }
@@ -35,8 +39,8 @@ func NewKafkaSender(conf *conf.Server) (*kafka.Writer, error) {
 	return w, nil
 }
 
-func NewUserService(uc *biz.UserUsecase, kw *kafka.Writer) *UserService {
-	return &UserService{uc: uc, kw: kw}
+func NewUserService(uc *biz.UserUsecase, sessionUsecase *biz.SessionUsecase, tokenUsecase *biz.TokenUsecase, kw *kafka.Writer) *UserService {
+	return &UserService{uc: uc, kw: kw, sessionUsecase: sessionUsecase, tokenUsecase: tokenUsecase}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, in *v1.CreateUserRequest) (*v1.User, error) {
@@ -79,5 +83,26 @@ func (s *UserService) VerifyPassword(ctx context.Context, r *v1.VerifyPasswordRe
 		return nil, errors.Unauthorized(v1.UserServiceErrorReason_INVALID_PASSWORD.String(), "Invalid password")
 	}
 
-	return nil, nil
+	sid, err := uuid.NewRandom()
+	accessToken, err := s.tokenUsecase.CreateToken(user.Id, sid.String(), time.Now().Add(time.Hour*12))
+	if err != nil {
+		return nil, err
+	}
+
+	sessionExpired := time.Now().Add(time.Hour * 24 * 7)
+	refreshToken, err := s.tokenUsecase.CreateToken(user.Id, sid.String(), sessionExpired)
+
+	err = s.sessionUsecase.SetSession(ctx, biz.Session{
+		Id:           sid.String(),
+		RefreshToken: refreshToken,
+		ExpiresAt:    sessionExpired,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.VerifyPasswordReply{
+		RefreshToken: refreshToken,
+		AccessToken:  accessToken,
+	}, nil
 }

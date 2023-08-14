@@ -13,6 +13,8 @@ import (
 	uuid "github.com/nei7/ntube/pkg/util"
 )
 
+var _ biz.UserRepo = (*userRepo)(nil)
+
 type userRepo struct {
 	data *Data
 	log  *log.Helper
@@ -35,7 +37,6 @@ func convertToProto(user User) *v1.User {
 }
 
 func (r *userRepo) CreateUser(ctx context.Context, g *v1.CreateUserRequest) (*v1.User, error) {
-
 	hashedPassword, err := util.HashPassword(g.Password)
 	if err != nil {
 		return nil, err
