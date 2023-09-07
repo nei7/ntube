@@ -45,8 +45,8 @@ func wireApp(confServer *conf.Server, data_Database *conf.Data_Database, data_Re
 		return nil, nil, err
 	}
 	userService := service.NewUserService(userUsecase, sessionUsecase, tokenUsecase, writer)
-	grpcServer := server.NewGRPCServer(confServer, userService, logger, tracerProvider)
-	httpServer := server.NewHTTPServer(confServer, userService, logger, tracerProvider)
+	grpcServer := server.NewGRPCServer(confServer, token, userService, logger, tracerProvider)
+	httpServer := server.NewHTTPServer(confServer, token, userService, logger, tracerProvider)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

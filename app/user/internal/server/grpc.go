@@ -12,14 +12,14 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, greeter *service.UserService, logger log.Logger, tp *tracesdk.TracerProvider) *grpc.Server {
+func NewGRPCServer(c *conf.Server, token *conf.Token, userService *service.UserService, logger log.Logger, tp *tracesdk.TracerProvider) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
 			tracing.Server(
 				tracing.WithTracerProvider(tp),
 			),
+			selectorFn(token.Secret),
 		),
 	}
 	if c.Grpc.Network != "" {
@@ -32,6 +32,6 @@ func NewGRPCServer(c *conf.Server, greeter *service.UserService, logger log.Logg
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
-	v1.RegisterUserServiceServer(srv, greeter)
+	v1.RegisterUserServiceServer(srv, userService)
 	return srv
 }

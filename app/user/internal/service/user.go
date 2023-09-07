@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -84,6 +85,10 @@ func (s *UserService) VerifyPassword(ctx context.Context, r *v1.VerifyPasswordRe
 	}
 
 	sid, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
+
 	accessToken, err := s.tokenUsecase.CreateToken(user.Id, sid.String(), time.Now().Add(time.Hour*12))
 	if err != nil {
 		return nil, err
@@ -105,4 +110,25 @@ func (s *UserService) VerifyPassword(ctx context.Context, r *v1.VerifyPasswordRe
 		RefreshToken: refreshToken,
 		AccessToken:  accessToken,
 	}, nil
+}
+
+func (uc *UserService) RenewToken(ctx context.Context, req *v1.RenewTokenRequest) (*v1.RenewTokenReply, error) {
+	token, ok := jwt.FromContext(ctx)
+	if !ok {
+
+		return nil, errors.Unauthorized("", "Can't extract token")
+	}
+
+	claims, ok := token.(*biz.TokenPayload)
+	if !ok {
+		return nil, errors.BadRequest("", "Invalid token claims")
+	}
+
+	session, err := uc.sessionUsecase.GetSession(ctx, claims.SessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	uc.tokenUsecase.CreateToken(claims.UserId, claims.SessionId)
+
 }

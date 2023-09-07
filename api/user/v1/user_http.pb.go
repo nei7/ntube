@@ -20,10 +20,12 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationUserServiceCreateUser = "/api.user.v1.UserService/CreateUser"
+const OperationUserServiceRenewToken = "/api.user.v1.UserService/RenewToken"
 const OperationUserServiceVerifyPassword = "/api.user.v1.UserService/VerifyPassword"
 
 type UserServiceHTTPServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*User, error)
+	RenewToken(context.Context, *RenewTokenRequest) (*RenewTokenReply, error)
 	VerifyPassword(context.Context, *VerifyPasswordRequest) (*VerifyPasswordReply, error)
 }
 
@@ -31,6 +33,7 @@ func RegisterUserServiceHTTPServer(s *http.Server, srv UserServiceHTTPServer) {
 	r := s.Route("/")
 	r.POST("v1/user", _UserService_CreateUser0_HTTP_Handler(srv))
 	r.POST("v1/user/login", _UserService_VerifyPassword0_HTTP_Handler(srv))
+	r.GET("v1/user/renew-token", _UserService_RenewToken0_HTTP_Handler(srv))
 }
 
 func _UserService_CreateUser0_HTTP_Handler(srv UserServiceHTTPServer) func(ctx http.Context) error {
@@ -77,8 +80,28 @@ func _UserService_VerifyPassword0_HTTP_Handler(srv UserServiceHTTPServer) func(c
 	}
 }
 
+func _UserService_RenewToken0_HTTP_Handler(srv UserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RenewTokenRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationUserServiceRenewToken)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RenewToken(ctx, req.(*RenewTokenRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RenewTokenReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type UserServiceHTTPClient interface {
 	CreateUser(ctx context.Context, req *CreateUserRequest, opts ...http.CallOption) (rsp *User, err error)
+	RenewToken(ctx context.Context, req *RenewTokenRequest, opts ...http.CallOption) (rsp *RenewTokenReply, err error)
 	VerifyPassword(ctx context.Context, req *VerifyPasswordRequest, opts ...http.CallOption) (rsp *VerifyPasswordReply, err error)
 }
 
@@ -97,6 +120,19 @@ func (c *UserServiceHTTPClientImpl) CreateUser(ctx context.Context, in *CreateUs
 	opts = append(opts, http.Operation(OperationUserServiceCreateUser))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *UserServiceHTTPClientImpl) RenewToken(ctx context.Context, in *RenewTokenRequest, opts ...http.CallOption) (*RenewTokenReply, error) {
+	var out RenewTokenReply
+	pattern := "v1/user/renew-token"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationUserServiceRenewToken))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

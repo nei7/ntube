@@ -6,7 +6,7 @@ require (
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/go-kratos/kratos/v2 v2.6.3
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/jackc/pgx/v5 v5.4.3

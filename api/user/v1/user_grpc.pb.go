@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	UserService_CreateUser_FullMethodName     = "/api.user.v1.UserService/CreateUser"
 	UserService_VerifyPassword_FullMethodName = "/api.user.v1.UserService/VerifyPassword"
+	UserService_RenewToken_FullMethodName     = "/api.user.v1.UserService/RenewToken"
 	UserService_GetUserByEmail_FullMethodName = "/api.user.v1.UserService/GetUserByEmail"
 	UserService_GetUserById_FullMethodName    = "/api.user.v1.UserService/GetUserById"
 	UserService_UpdateUser_FullMethodName     = "/api.user.v1.UserService/UpdateUser"
@@ -35,6 +36,7 @@ const (
 type UserServiceClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*User, error)
 	VerifyPassword(ctx context.Context, in *VerifyPasswordRequest, opts ...grpc.CallOption) (*VerifyPasswordReply, error)
+	RenewToken(ctx context.Context, in *RenewTokenRequest, opts ...grpc.CallOption) (*RenewTokenReply, error)
 	GetUserByEmail(ctx context.Context, in *GetUserByEmailRequest, opts ...grpc.CallOption) (*GetUserByEmailReply, error)
 	GetUserById(ctx context.Context, in *GetUserByIdRequest, opts ...grpc.CallOption) (*User, error)
 	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserReply, error)
@@ -63,6 +65,15 @@ func (c *userServiceClient) CreateUser(ctx context.Context, in *CreateUserReques
 func (c *userServiceClient) VerifyPassword(ctx context.Context, in *VerifyPasswordRequest, opts ...grpc.CallOption) (*VerifyPasswordReply, error) {
 	out := new(VerifyPasswordReply)
 	err := c.cc.Invoke(ctx, UserService_VerifyPassword_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RenewToken(ctx context.Context, in *RenewTokenRequest, opts ...grpc.CallOption) (*RenewTokenReply, error) {
+	out := new(RenewTokenReply)
+	err := c.cc.Invoke(ctx, UserService_RenewToken_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +140,7 @@ func (c *userServiceClient) ListUser(ctx context.Context, in *ListUserRequest, o
 type UserServiceServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*User, error)
 	VerifyPassword(context.Context, *VerifyPasswordRequest) (*VerifyPasswordReply, error)
+	RenewToken(context.Context, *RenewTokenRequest) (*RenewTokenReply, error)
 	GetUserByEmail(context.Context, *GetUserByEmailRequest) (*GetUserByEmailReply, error)
 	GetUserById(context.Context, *GetUserByIdRequest) (*User, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserReply, error)
@@ -147,6 +159,9 @@ func (UnimplementedUserServiceServer) CreateUser(context.Context, *CreateUserReq
 }
 func (UnimplementedUserServiceServer) VerifyPassword(context.Context, *VerifyPasswordRequest) (*VerifyPasswordReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyPassword not implemented")
+}
+func (UnimplementedUserServiceServer) RenewToken(context.Context, *RenewTokenRequest) (*RenewTokenReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenewToken not implemented")
 }
 func (UnimplementedUserServiceServer) GetUserByEmail(context.Context, *GetUserByEmailRequest) (*GetUserByEmailReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserByEmail not implemented")
@@ -211,6 +226,24 @@ func _UserService_VerifyPassword_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).VerifyPassword(ctx, req.(*VerifyPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RenewToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenewTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RenewToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RenewToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RenewToken(ctx, req.(*RenewTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -337,6 +370,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyPassword",
 			Handler:    _UserService_VerifyPassword_Handler,
+		},
+		{
+			MethodName: "RenewToken",
+			Handler:    _UserService_RenewToken_Handler,
 		},
 		{
 			MethodName: "GetUserByEmail",

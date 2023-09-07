@@ -39,8 +39,8 @@ func (r *sessionRepo) SetSession(ctx context.Context, s biz.Session) error {
 	return err
 }
 
-func (r *sessionRepo) GetSession(ctx context.Context, s biz.Session) (*biz.Session, error) {
-	data, err := r.data.rdb.Get(ctx, s.Id).Result()
+func (r *sessionRepo) GetSession(ctx context.Context, id string) (*biz.Session, error) {
+	data, err := r.data.rdb.Get(ctx, id).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, errors.NotFound("SESSION_NOT_FOUND", "session not found")
@@ -56,18 +56,4 @@ func (r *sessionRepo) GetSession(ctx context.Context, s biz.Session) (*biz.Sessi
 	}
 
 	return session, nil
-}
-
-func (r *sessionRepo) UpdateSession(ctx context.Context, s biz.Session) error {
-	err := r.data.rdb.Expire(ctx, s.Id, s.ExpiresAt.Sub(time.Now())).Err()
-	if err != nil {
-		return err
-	}
-
-	err = r.SetSession(ctx, s)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

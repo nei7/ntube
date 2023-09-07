@@ -64,6 +64,18 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.user.v1.VerifyPasswordReply'
+    v1/user/renew-token:
+        get:
+            tags:
+                - UserService
+            operationId: UserService_RenewToken
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.RenewTokenReply'
 components:
     schemas:
         api.user.v1.CreateUserRequest:
@@ -75,6 +87,9 @@ components:
                     type: string
                 password:
                     type: string
+        api.user.v1.RenewTokenReply:
+            type: object
+            properties: {}
         api.user.v1.User:
             type: object
             properties:
